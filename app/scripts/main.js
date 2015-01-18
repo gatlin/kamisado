@@ -176,43 +176,6 @@ Session.prototype.resetGame = function() {
 };
 
 /***
- * Connection
- *
- * Manages a peer-to-peer connection with the other player.
- * Communication is done through the PeerConnection API. Signaling is provided
- * by jingle / an xmpp server.
- */
-function Connection(session) {
-    this.session = session;
-    this.BOSH_SERVICE = 'http://bosh.niltag.net:80/http-bind';
-    this.connection = new Strophe.Connection(this.BOSH_SERVICE);
-}
-
-Connection.prototype.connect = function() {
-    this.connection.connect('test@niltag.net','test',this.onConnect);
-};
-
-Connection.prototype.onConnect = function(status) {
-    switch (status) {
-        case Strophe.Status.CONNECTING:
-            console.log('Strophe is connecting');
-            break;
-        case Strophe.Status.CONNFAIL:
-            console.log('Strophe failed to connect');
-            break;
-        case Strophe.Status.DISCONNECTING:
-            console.log('Strophe is disconnecting');
-            break;
-        case Strophe.Status.DISCONNECTED:
-            console.log('Strophe is disconnected');
-            break;
-        default:
-            console.log('Strophe is connected');
-            // do something with the connection
-    };
-};
-
-/***
  * The Board
  *
  * Draws the current state of the game on the canvas and coordinates state
@@ -238,8 +201,6 @@ function Board(bId, session) {
         ['brown','green','red','yellow','pink','sky','blue','orange']
     ];
     this.session = session;
-    this.connection = new Connection(session);
-    this.connection.connect();
 
     // called every time an event needs to update the screen
     var cW = window.innerWidth;
@@ -366,10 +327,13 @@ Board.prototype.clicked = function(pos) {
         this.session.state.selected.y = -1;
     }
     else {
+        // not selected, tile contains a piece -> select this new piece
         if (this.session.state.grid[tile.y][tile.x] > 0) {
             this.session.state.selected.x = tile.x;
             this.session.state.selected.y = tile.y;
         }
+        // not selected, tile does not contain a piece ->
+        // move the piece
         if (this.session.state.grid[tile.y][tile.x] === 0) {
             this.session.state.grid[tile.y][tile.x] =
                 this.session.state.grid[currentY][currentX];
