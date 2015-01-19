@@ -362,7 +362,7 @@ function init() {
         theBoard.draw();
     }, false);
 
-    document.getElementById('reset').addEventListener('click',function(ev) {
+    document.getElementById('reset').addEventListener('click',function() {
         theBoard.resetGame();
     });
 
