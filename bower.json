@@ -1,9 +1,0 @@
-{
-  "name": "kamisado",
-  "private": true,
-  "dependencies": {
-    "jquery": "~1.11.1",
-    "modernizr": "~2.8.2",
-    "HTML5-Reset": "~2.1.2"
-  }
-}
