@@ -4,8 +4,6 @@ if (typeof kamisado_port === "undefined") {
     kamisado_port = 8080;
 }
 
-var sys = require('sys');
-var net = require('net');
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({ port: kamisado_port });
 
