@@ -10,12 +10,11 @@ var WebSocketServer = require('ws').Server
 /* A game contains the websocket connections of all participants */
 function Game(gameId) {
     this.gameId = gameId;
-    this.player1 = null;
-    this.player2 = null;
+    this.players = [null, null];
 }
 
 Game.prototype.broadcast = function(message) {
-    [this.player1, this.player2].forEach(function(pl) {
+    this.players.forEach(function(pl) {
         if (pl !== null) {
             pl.send(message);
         }
@@ -25,6 +24,11 @@ Game.prototype.broadcast = function(message) {
 /* In-memory storage of active games */
 var games = {};
 
+/*
+ * Usage: var newGuid = guid();
+ * Lovingly stolen from:
+ *   http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+ */
 var guid = (function() {
     function s4() {
         return Math.floor((1 + Math.random()) * 0x10000)
@@ -38,22 +42,34 @@ var guid = (function() {
     };
 })();
 
+function newGame(ws) {
+    var gameId = guid();
+    games[gameId] = new Game(gameId);
+    games[gameId].players[0] = ws;
+    games[gameId].broadcast("new 0 " + gameId);
+}
+
+
 wss.on("connection", function(ws) {
 
     ws.on("message", function(message) {
         var tokens = message.split(/[ \t]+/);
         switch (tokens[0]) {
         case "new":
-            var gameId = guid();
-            games[gameId] = new Game(gameId);
-            games[gameId].player1 = ws;
-            games[gameId].broadcast("new " + gameId);
+            newGame(ws);
             break;
 
         case "join":
             var gameId = tokens[1];
-            games[gameId].player2 = ws;
-            games[gameId].broadcast("joined " + gameId);
+            var playerNum = tokens[2];
+            if (!(gameId in games)) {
+                newGame(ws);
+            }
+            else {
+                games[gameId].players[playerNum] = ws;
+                games[gameId].broadcast("joined " + gameId);
+                console.log("Player " + playerNum + " joined game " + gameId);
+            }
             break;
 
         case "msg":

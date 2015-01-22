@@ -65,24 +65,6 @@ function getMousePos(canvas, evt) {
     };
 }
 
-/*
- * Usage: var newGuid = guid();
- * Lovingly stolen from:
- *   http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
-*/
-var guid = (function() {
-    function s4() {
-        return Math.floor((1 + Math.random()) * 0x10000)
-            .toString(16)
-            .substring(1);
-    }
-
-    return function() {
-        return s4() + s4 () + '-' + s4() + '-' + s4() + '-' +
-               s4() + '-' + s4() + s4() + s4();
-    };
-})();
-
 /* Lookup table for the actual hex color values */
 var colors = {
     orange: '#F5B437',
@@ -101,24 +83,67 @@ var colors = {
 var pieceNumberColors = [ 'orange', 'blue', 'sky', 'pink', 'yellow', 'red',
                             'green', 'brown'];
 
+function parseHash() {
+    var pieces = location.hash.slice(1).split(/\//);
+    return pieces;
+}
+
 /***
  * Session management
  *
  * Contains the state of the game. The Board will reference this.
  */
-function Session() {
-    if (location.hash.length > 0) {
-        this.gameId = location.hash;
+function Session(readyCB) {
+    this.socket = new WebSocket('ws://127.0.0.1:8080');
+
+    var thisSession = this;
+    this.socket.onopen = function() {
+        if (location.hash.length > 0) {
+            thisSession.gameId = parseHash()[0];
+            thisSession.joinGame();
+        }
+        else {
+            thisSession.newGame();
+        }
+    };
+
+    this.socket.onmessage = function(ev) {
+        console.log('WebSocket recv: ' + ev.data);
+        var tokens = ev.data.split(/[ \t]+/);
+        switch (tokens[0]) {
+            case 'new':
+                thisSession.gameId = tokens[2];
+                location.hash = tokens[2]+'/'+tokens[1];
+                thisSession.load();
+                readyCB();
+                break;
+            case 'joined':
+                thisSession.load();
+                readyCB();
+                break;
+            default:
+                console.log('invalid server response');
+                console.log(ev.data);
+                console.log('***');
+        }
+    };
+}
+
+Session.prototype.newGame = function() {
+    this.socket.send('new');
+};
+
+Session.prototype.joinGame = function() {
+    var hashpieces = parseHash();
+    var me = -1;
+    if (hashpieces.length < 2) {
+        me = 1;
     }
     else {
-        this.gameId = guid();
-        location.hash = this.gameId;
-        this.state = this.initialState();
-        this.save();
+        me = hashpieces[1];
     }
-    this.load();
-    console.log(this.gameId);
-}
+    this.socket.send('join ' + this.gameId + ' ' + me);
+};
 
 Session.prototype.load = function() {
     this.state = JSON.parse(localStorage.getItem(this.gameId));
@@ -132,9 +157,16 @@ Session.prototype.save = function() {
     localStorage.setItem(this.gameId, JSON.stringify(this.state));
 };
 
-/* FIXME this is just a stub */
 Session.prototype.whoami = function() {
-    return 0;
+    var hashpieces = parseHash();
+    var me = -1;
+    if (hashpieces.length < 2) {
+        me = 0;
+    }
+    else {
+        me = hashpieces[1];
+    }
+    return me;
 };
 
 Session.prototype.initialState = function() {
@@ -356,18 +388,22 @@ function init() {
         console.log('localStorage is required to play this game.');
         return;
     }
-    theBoard = new Board('board', new Session());
-    theBoard.addContextEvent('click', function(evt) {
-        var mousePos = getMousePos(this, evt);
-        theBoard.clicked(mousePos);
+
+    theBoard = new Board('board', new Session(function() {
+        /* The session takes this function as an argument to call after it has
+         * properly initialized itself. */
+        theBoard.addContextEvent('click', function(evt) {
+            var mousePos = getMousePos(this, evt);
+            theBoard.clicked(mousePos);
+            theBoard.draw();
+        }, false);
+
+        document.getElementById('reset').addEventListener('click',function() {
+            theBoard.resetGame();
+        });
+
         theBoard.draw();
-    }, false);
-
-    document.getElementById('reset').addEventListener('click',function() {
-        theBoard.resetGame();
-    });
-
-    theBoard.draw();
+    }));
 }
 
 // Let the games begin ...
