@@ -25,7 +25,7 @@
  * X. Add ability to save and update session data in the browser.
  *    (which player am I, current board state, etc)
  * 2. Provide some means of communication with the other player.
- *    NB: xmpp looks like a good fit for this
+ *    Update: simple websocket server is going
  * 3. Logic for detecting if a move is legal.
  */
 
@@ -210,6 +210,7 @@ function Board(bId, session) {
     this.ctx.canvas.width = 0.9*(min(cH,cW));
     this.ctx.canvas.height = this.ctx.canvas.width;
     this.tileSide = ((0.9*min(cH,cW)) / 8) ;
+
 }
 
 /* Return the board's drawing context. Useful for event handlers. */

@@ -7,8 +7,7 @@ if (typeof kamisado_port === "undefined") {
 var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({ port: kamisado_port });
 
-var games = {};
-
+/* A game contains the websocket connections of all participants */
 function Game(gameId) {
     this.gameId = gameId;
     this.player1 = null;
@@ -22,6 +21,9 @@ Game.prototype.broadcast = function(message) {
         }
     });
 };
+
+/* In-memory storage of active games */
+var games = {};
 
 var guid = (function() {
     function s4() {
@@ -63,6 +65,7 @@ wss.on("connection", function(ws) {
             console.log("huh?");
         }
     });
+
 });
 
 
