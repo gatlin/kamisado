@@ -144,26 +144,30 @@
                     this.board[this.selected.y][this.selected.x];
                 this.board[this.selected.y][this.selected.x] = 0;
 
-                this.selected = clickPos;
+                this.selected.x = clickPos.x;
+                this.selected.y = clickPos.y;
                 this.player = (this.player) ? 0 : 1;
 
                 console.log("moved. switched to player " + this.player);
+
+                var x, y, nextCell;
+                var selectedColor = tileColorPattern[this.selected.y][this.selected.x];
+                var nextPiece = (selectedColor + 1) + (this.player * 8);
+                for (y = 0; y < this.board.length; y++) {
+                    for (x = 0; x < this.board[y].length; x++) {
+                        nextCell = this.board[y][x];
+                        if (nextCell === nextPiece) {
+                            this.selected.x = x;
+                            this.selected.y = y;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
         return this;
     }
-
-    function selectNextPiece (ptr) {
-        var selectedColor = tileColorPattern[ptr.selected.y][ptr.selected.x];
-        var nextPiece = (selectedColor + 1) + (ptr.player * 8);
-        var x = ptr.pos.x, y = ptr.pos.y, cell = ptr.extract();
-        if (cell === nextPiece) {
-            ptr.selected.x = x;
-            ptr.selected.y = y;
-        }
-        return cell;
-    };
 
     // IO monad
     function IO (unsafePerformIO) {
@@ -276,7 +280,6 @@
                 mousePos.y = Math.floor(mousePos.y / tileSide);
                 boardPtr.
                     clicked(mousePos).
-                    extend(selectNextPiece).
                     drawCells();
 
             });
