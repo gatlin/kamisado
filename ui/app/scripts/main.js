@@ -19,7 +19,7 @@
         tileSide,
         radius,
         setup,
-        start;
+        main;
 
     /*
      * Color configuration
@@ -63,9 +63,6 @@
         return this;
     };
 
-    function sameColor(x, y) {
-        return (x % size) == (y % size);
-    }
     // simple coordinate pair
     function Pos(x, y) {
         this.x = x;
@@ -286,11 +283,11 @@
         });
     }
 
-    start = setup.
+    main = setup.
             chain(generateBoard).
             chain(function (boardPtr) { return new IO.of(boardPtr.drawCells()) }).
             chain(listen);
 
-    start.unsafePerformIO();
+    main.unsafePerformIO();
 
 })();
