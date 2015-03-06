@@ -126,6 +126,8 @@
         if (this.selected.x === clickPos.x &&
             this.selected.y === clickPos.y) {
             // do nothing
+            this.player = (this.player) ? 0 : 1;
+            this.selectNextPiece();
             return this;
         }
 
@@ -134,11 +136,11 @@
             // -> select this new piece
             if (cell > 0) {
                 this.selected = clickPos;
+                this.selectNextPiece();
             }
 
             // not selected and cell does not contain a piece
             // -> move the currently selected piece here
-            // -> select the corresponding other person's piece
             if (cell === 0) {
                 this.board[clickPos.y][clickPos.x] =
                     this.board[this.selected.y][this.selected.x];
@@ -146,28 +148,32 @@
 
                 this.selected.x = clickPos.x;
                 this.selected.y = clickPos.y;
-                this.player = (this.player) ? 0 : 1;
 
+                this.player = (this.player) ? 0 : 1 ;
                 console.log("moved. switched to player " + this.player);
 
-                var x, y, nextCell;
-                var selectedColor = tileColorPattern[this.selected.y][this.selected.x];
-                var nextPiece = (selectedColor + 1) + (this.player * 8);
-                for (y = 0; y < this.board.length; y++) {
-                    for (x = 0; x < this.board[y].length; x++) {
-                        nextCell = this.board[y][x];
-                        if (nextCell === nextPiece) {
-                            this.selected.x = x;
-                            this.selected.y = y;
-                            break;
-                        }
-                    }
-                }
             }
         }
 
+        this.selectNextPiece();
         return this;
     }
+
+    Pointer.prototype.selectNextPiece = function() {
+        var x, y, nextCell;
+        var selectedColor = tileColorPattern[this.selected.y][this.selected.x];
+        var nextPiece = (selectedColor + 1) + (this.player * 8);
+        for (y = 0; y < this.board.length; y++) {
+            for (x = 0; x < this.board[y].length; x++) {
+                nextCell = this.board[y][x];
+                if (nextCell === nextPiece) {
+                    this.selected.x = x;
+                    this.selected.y = y;
+                    break;
+                }
+            }
+        }
+    };
 
     // IO monad
     function IO (unsafePerformIO) {
