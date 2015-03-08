@@ -5,6 +5,7 @@
     "jquery": "~1.11.1",
     "modernizr": "~2.8.2",
     "HTML5-Reset": "~2.1.2",
-    "chai": "~1.10.0"
+    "chai": "~1.10.0",
+    "bootstrap": "~3.3.2"
   }
 }

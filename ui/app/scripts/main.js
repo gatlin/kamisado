@@ -14,7 +14,7 @@
     var element = document.getElementById('board'),
         context = element.getElementsByTagName('canvas')[0].getContext('2d'),
         wWidth = window.innerWidth,
-        wHeight = window.innerHeight,
+        wHeight = window.innerHeight - 50,
         size = 8,
         tileSide,
         radius,
@@ -136,12 +136,15 @@
             // -> select this new piece
             if (cell > 0) {
                 this.selected = clickPos;
-                this.selectNextPiece();
             }
 
             // not selected and cell does not contain a piece
             // -> move the currently selected piece here
             if (cell === 0) {
+                /*
+                 * TODO
+                 * Ensure that this is a legal move for the piece
+                 */
                 this.board[clickPos.y][clickPos.x] =
                     this.board[this.selected.y][this.selected.x];
                 this.board[this.selected.y][this.selected.x] = 0;
@@ -287,8 +290,9 @@
                 boardPtr.
                     clicked(mousePos).
                     drawCells();
-
             });
+
+
         });
     }
 
