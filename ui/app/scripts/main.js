@@ -64,13 +64,7 @@
     };
 
     function parseHash() {
-        var pieces = location.hash.slice(1).split(/\//);
-        if (pieces.length === 2) {
-            return { gameId: pieces[0], playerNumber: pieces[1] };
-        }
-        else {
-            return { gameId: -1, playerNumber: 0 };
-        }
+        var pieces = location.hash.slice(1);
     }
 
     // simple coordinate pair
@@ -86,7 +80,7 @@
     }
 
     // comonadic wrapper around a grid state
-    function Board(grid, pos, selected, player) {
+    function Board(grid, pos, selected, player, gameId) {
         this.grid = grid;
         this.pos   = pos;
 
@@ -97,6 +91,10 @@
         this.player = typeof player !== 'undefined'
             ? player
             : 0;
+
+        this.gameId = typeof gameId !== 'undefined'
+            ? gameId
+            : "test-game";
     }
 
     Board.prototype.updatePos = function(pos) {
@@ -114,7 +112,7 @@
             grid[y] = [];
             for (x = 0; x < this.grid[y].length; x++) {
                 grid[y][x] = f(new Board(this.grid, new Pos(x, y),
-                            this.selected, this.player));
+                            this.selected, this.player, this.gameId));
             }
         }
         this.grid = grid;
@@ -131,6 +129,8 @@
         // direction dependent: if the current player is 0, they are going
         // "down" the page, and vice versa for player 1.
 
+        // FIXME
+        // This does not take into account if any pieces are blocking you
         return ((this.player ? this.selected.y > this.pos.y
                              : this.selected.y < this.pos.y)
             &&  (this.extract() === 0)
@@ -237,8 +237,8 @@
 
     function getBoard() {
         return new IO (function() {
-            var hashData = parseHash();
-            var saved = JSON.parse(localStorage.getItem(hashData.gameId));
+            var hash = parseHash();
+            var saved = JSON.parse(localStorage.getItem(hash));
             if (saved === null) {
                 var grid = [], y;
                 for (y = 1; y < (size-1); y++) {
@@ -249,7 +249,9 @@
                 return new Board(grid, new Pos(0, 0));
             }
             else {
-                return saved;
+                return new Board(saved.grid, new Pos(0, 0),
+                                 saved.selected, saved.player,
+                                 saved.gameId);
             }
         });
     }
