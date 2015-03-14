@@ -115,6 +115,20 @@
         return this.extend(drawCell);
     }
 
+    // Called from clicked(), so this.pos is the position that has been
+    // clicked. The piece is starting from this.selected
+    Board.prototype.legalMove = function() {
+        // direction dependent: if the current player is 0, they are going
+        // "down" the page, and vice versa for player 1.
+
+        return ((this.player ? this.selected.y > this.pos.y
+                             : this.selected.y < this.pos.y)
+            &&  (this.extract() === 0)
+            && ((Math.abs(this.selected.x - this.pos.x) ===
+                 Math.abs(this.selected.y - this.pos.y))
+            ||  (this.selected.x - this.pos.x) === 0));
+    };
+
     Board.prototype.clicked = function(clickPos) {
         var cell = this.updatePos(clickPos).extract();
 
@@ -145,6 +159,10 @@
                  * TODO
                  * Ensure that this is a legal move for the piece
                  */
+                if (!this.legalMove()) {
+                    return this;
+                }
+                // else ...
                 this.grid[clickPos.y][clickPos.x] =
                     this.grid[this.selected.y][this.selected.x];
                 this.grid[this.selected.y][this.selected.x] = 0;
