@@ -64,8 +64,28 @@
     };
 
     function parseHash() {
-        var pieces = location.hash.slice(1);
+        var hash = location.hash.slice(1);
+        if (hash === "") {
+            hash = guid();
+            location.hash = "#" + hash;
+        }
+        return hash;
     }
+
+    // globally unique ID generator
+    // usage: guid() -- different output each time
+    var guid = (function() {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000)
+                .toString(16)
+                .substring(1);
+        }
+
+        return function() {
+            return s4() + s4 () + '-' + s4() + '-' + s4() + '-' +
+                   s4() + '-' + s4() + s4() + s4();
+        };
+    })();
 
     // simple coordinate pair
     function Pos(x, y) {
@@ -119,6 +139,63 @@
         return this;
     };
 
+    // Called on every refresh for each cell on the grid.
+    function drawCell (ptr) {
+        // draw the background color
+        var cell = ptr.extract();
+        var cellColor = colors[tileColorPattern[ptr.pos.y][ptr.pos.x]];
+        context.fillStyle = cellColor;
+        context.fillRect(ptr.pos.x * tileSide, ptr.pos.y * tileSide,
+                                     tileSide,             tileSide);
+
+        if (cell === 0) { return cell; }
+
+        // if there is a piece on this cell, draw it as well
+        var x = ptr.pos.x + 1;
+        var y = ptr.pos.y + 1;
+        var center = {
+            x: ((x) * tileSide) - (tileSide / 2),
+            y: ((y) * tileSide) - (tileSide / 2)
+        };
+
+        var bezel = (cell > size) ? colors[9] : colors[8];
+        var color = colors[(cell -1)%8];
+
+        // bezel
+        context.beginPath();
+        context.arc(center.x, center.y, radius, 0,
+                Math.PI*2, false);
+        context.closePath();
+        context.fillStyle = bezel;
+        context.fill();
+        context.strokeStyle = bezel;
+        context.stroke();
+
+        // piece color
+        context.beginPath();
+        context.arc(center.x, center.y, radius * 0.75, 0,
+                Math.PI*2, false);
+        context.closePath();
+        context.fillStyle = color;
+        context.fill();
+        context.strokeStyle = color;
+        context.stroke();
+
+        if (ptr.selected !== null         &&
+            ptr.selected.x === ptr.pos.x &&
+            ptr.selected.y === ptr.pos.y) {
+            context.beginPath();
+            context.arc(center.x, center.y, radius * 0.5, 0,
+                    Math.PI*2, false);
+            context.fillStyle = bezel;
+            context.fill();
+            context.strokeStyle = bezel;
+            context.stroke();
+        }
+
+        return cell;
+    }
+
     Board.prototype.drawCells = function() {
         return this.extend(drawCell);
     }
@@ -167,10 +244,6 @@
             // not selected and cell does not contain a piece
             // -> move the currently selected piece here
             if (cell === 0) {
-                /*
-                 * TODO
-                 * Ensure that this is a legal move for the piece
-                 */
                 if (!this.legalMove()) {
                     return this;
                 }
@@ -254,63 +327,6 @@
                                  saved.gameId);
             }
         });
-    }
-
-    // Called on every refresh for each cell on the grid.
-    function drawCell (ptr) {
-        // draw the background color
-        var cell = ptr.extract();
-        var cellColor = colors[tileColorPattern[ptr.pos.y][ptr.pos.x]];
-        context.fillStyle = cellColor;
-        context.fillRect(ptr.pos.x * tileSide, ptr.pos.y * tileSide,
-                                     tileSide,             tileSide);
-
-        if (cell === 0) { return cell; }
-
-        // if there is a piece on this cell, draw it as well
-        var x = ptr.pos.x + 1;
-        var y = ptr.pos.y + 1;
-        var center = {
-            x: ((x) * tileSide) - (tileSide / 2),
-            y: ((y) * tileSide) - (tileSide / 2)
-        };
-
-        var bezel = (cell > size) ? colors[9] : colors[8];
-        var color = colors[(cell -1)%8];
-
-        // bezel
-        context.beginPath();
-        context.arc(center.x, center.y, radius, 0,
-                Math.PI*2, false);
-        context.closePath();
-        context.fillStyle = bezel;
-        context.fill();
-        context.strokeStyle = bezel;
-        context.stroke();
-
-        // piece color
-        context.beginPath();
-        context.arc(center.x, center.y, radius * 0.75, 0,
-                Math.PI*2, false);
-        context.closePath();
-        context.fillStyle = color;
-        context.fill();
-        context.strokeStyle = color;
-        context.stroke();
-
-        if (ptr.selected !== null         &&
-            ptr.selected.x === ptr.pos.x &&
-            ptr.selected.y === ptr.pos.y) {
-            context.beginPath();
-            context.arc(center.x, center.y, radius * 0.5, 0,
-                    Math.PI*2, false);
-            context.fillStyle = bezel;
-            context.fill();
-            context.strokeStyle = bezel;
-            context.stroke();
-        }
-
-        return cell;
     }
 
     setup = new IO (function() {
