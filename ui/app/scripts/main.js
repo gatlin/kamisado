@@ -100,7 +100,7 @@
     }
 
     // comonadic wrapper around a grid state
-    function Board(grid, pos, selected, player, gameId) {
+    function Board(grid, pos, gameId, selected, player) {
         this.grid = grid;
         this.pos   = pos;
 
@@ -117,6 +117,18 @@
             : "test-game";
     }
 
+    Board.prototype.save = function() {
+        var state = {
+            grid : this.grid,
+            player : this.player,
+            gameId : this.gameId,
+            selected : this.selected
+        };
+        localStorage.setItem(this.gameId,
+                JSON.stringify(state));
+        console.log("saved as gameId = " + this.gameId);
+    };
+
     Board.prototype.updatePos = function(pos) {
         this.pos = pos;
         return this;
@@ -132,7 +144,7 @@
             grid[y] = [];
             for (x = 0; x < this.grid[y].length; x++) {
                 grid[y][x] = f(new Board(this.grid, new Pos(x, y),
-                            this.selected, this.player, this.gameId));
+                            this.gameId, this.selected, this.player ));
             }
         }
         this.grid = grid;
@@ -262,6 +274,7 @@
         }
 
         this.selectNextPiece();
+        this.save();
         return this;
     }
 
@@ -319,12 +332,12 @@
                 }
                 grid[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
                 grid[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
-                return new Board(grid, new Pos(0, 0));
+                return new Board(grid, new Pos(0, 0), hash);
             }
             else {
                 return new Board(saved.grid, new Pos(0, 0),
-                                 saved.selected, saved.player,
-                                 saved.gameId);
+                                 saved.gameId,
+                                 saved.selected, saved.player);
             }
         });
     }
@@ -336,24 +349,28 @@
         radius = (tileSide * 0.9) / 2;
     });
 
-    function listen(gridPtr) {
+    function listen(board) {
         return new IO(function() {
             context.canvas.addEventListener('click', function(evt) {
                 var mousePos = getMousePos(this, evt);
                 mousePos.x = Math.floor(mousePos.x / tileSide);
                 mousePos.y = Math.floor(mousePos.y / tileSide);
-                gridPtr.
+                board.
                     clicked(mousePos).
                     drawCells();
             });
-
-
+            document.getElementById('new-game')
+                .addEventListener('click', function(evt) {
+                console.log("clicked new game");
+                location.hash = '';
+                location.reload();
+            });
         });
     }
 
     main = setup.
             chain(getBoard).
-            chain(function (gridPtr) { return new IO.of(gridPtr.drawCells()) }).
+            chain(function (board) { return new IO.of(board.drawCells()) }).
             chain(listen);
 
     main.unsafePerformIO();
