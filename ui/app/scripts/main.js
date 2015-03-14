@@ -63,6 +63,16 @@
         return this;
     };
 
+    function parseHash() {
+        var pieces = location.hash.slice(1).split(/\//);
+        if (pieces.length === 2) {
+            return { gameId: pieces[0], playerNumber: pieces[1] };
+        }
+        else {
+            return { gameId: -1, playerNumber: 0 };
+        }
+    }
+
     // simple coordinate pair
     function Pos(x, y) {
         this.x = x;
@@ -225,15 +235,22 @@
         });
     };
 
-    function generategrid() {
+    function getBoard() {
         return new IO (function() {
-            var grid = [], y;
-            for (y = 1; y < (size-1); y++) {
-                grid[y] = [].repeat(0, 8);
+            var hashData = parseHash();
+            var saved = JSON.parse(localStorage.getItem(hashData.gameId));
+            if (saved === null) {
+                var grid = [], y;
+                for (y = 1; y < (size-1); y++) {
+                    grid[y] = [].repeat(0, 8);
+                }
+                grid[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
+                grid[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
+                return new Board(grid, new Pos(0, 0));
             }
-            grid[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
-            grid[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
-            return new Board(grid, new Pos(0, 0));
+            else {
+                return saved;
+            }
         });
     }
 
@@ -317,7 +334,7 @@
     }
 
     main = setup.
-            chain(generategrid).
+            chain(getBoard).
             chain(function (gridPtr) { return new IO.of(gridPtr.drawCells()) }).
             chain(listen);
 
