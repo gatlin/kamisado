@@ -4,7 +4,7 @@
     /*
      * Implementation notes:
      *
-     * - a board is indexed (y,x) because ultimately it's easier for me to
+     * - a grid is indexed (y,x) because ultimately it's easier for me to
      *   write array literals indexed like this
      */
 
@@ -75,9 +75,9 @@
                        evt.clientY - rect.top);
     }
 
-    // comonadic wrapper around a board state
-    function Pointer(board, pos, selected, player) {
-        this.board = board;
+    // comonadic wrapper around a grid state
+    function Board(grid, pos, selected, player) {
+        this.grid = grid;
         this.pos   = pos;
 
         this.selected = typeof selected !== 'undefined'
@@ -89,33 +89,33 @@
             : 0;
     }
 
-    Pointer.prototype.updatePos = function(pos) {
+    Board.prototype.updatePos = function(pos) {
         this.pos = pos;
         return this;
     };
 
-    Pointer.prototype.extract = function() {
-        return this.board[this.pos.y][this.pos.x];
+    Board.prototype.extract = function() {
+        return this.grid[this.pos.y][this.pos.x];
     };
 
-    Pointer.prototype.extend = function(f) {
-        var board = [], x, y;
-        for (y = 0; y < this.board.length; y++) {
-            board[y] = [];
-            for (x = 0; x < this.board[y].length; x++) {
-                board[y][x] = f(new Pointer(this.board, new Pos(x, y),
+    Board.prototype.extend = function(f) {
+        var grid = [], x, y;
+        for (y = 0; y < this.grid.length; y++) {
+            grid[y] = [];
+            for (x = 0; x < this.grid[y].length; x++) {
+                grid[y][x] = f(new Board(this.grid, new Pos(x, y),
                             this.selected, this.player));
             }
         }
-        this.board = board;
+        this.grid = grid;
         return this;
     };
 
-    Pointer.prototype.drawCells = function() {
+    Board.prototype.drawCells = function() {
         return this.extend(drawCell);
     }
 
-    Pointer.prototype.clicked = function(clickPos) {
+    Board.prototype.clicked = function(clickPos) {
         var cell = this.updatePos(clickPos).extract();
 
         if (this.selected === null) {
@@ -145,9 +145,9 @@
                  * TODO
                  * Ensure that this is a legal move for the piece
                  */
-                this.board[clickPos.y][clickPos.x] =
-                    this.board[this.selected.y][this.selected.x];
-                this.board[this.selected.y][this.selected.x] = 0;
+                this.grid[clickPos.y][clickPos.x] =
+                    this.grid[this.selected.y][this.selected.x];
+                this.grid[this.selected.y][this.selected.x] = 0;
 
                 this.selected.x = clickPos.x;
                 this.selected.y = clickPos.y;
@@ -162,13 +162,13 @@
         return this;
     }
 
-    Pointer.prototype.selectNextPiece = function() {
+    Board.prototype.selectNextPiece = function() {
         var x, y, nextCell;
         var selectedColor = tileColorPattern[this.selected.y][this.selected.x];
         var nextPiece = (selectedColor + 1) + (this.player * 8);
-        for (y = 0; y < this.board.length; y++) {
-            for (x = 0; x < this.board[y].length; x++) {
-                nextCell = this.board[y][x];
+        for (y = 0; y < this.grid.length; y++) {
+            for (x = 0; x < this.grid[y].length; x++) {
+                nextCell = this.grid[y][x];
                 if (nextCell === nextPiece) {
                     this.selected.x = x;
                     this.selected.y = y;
@@ -205,19 +205,19 @@
         });
     };
 
-    function generateBoard() {
+    function generategrid() {
         return new IO (function() {
-            var board = [], y;
+            var grid = [], y;
             for (y = 1; y < (size-1); y++) {
-                board[y] = [].repeat(0, 8);
+                grid[y] = [].repeat(0, 8);
             }
-            board[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
-            board[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
-            return new Pointer(board, new Pos(0, 0));
+            grid[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
+            grid[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
+            return new Board(grid, new Pos(0, 0));
         });
     }
 
-    // Called on every refresh for each cell on the board.
+    // Called on every refresh for each cell on the grid.
     function drawCell (ptr) {
         // draw the background color
         var cell = ptr.extract();
@@ -281,13 +281,13 @@
         radius = (tileSide * 0.9) / 2;
     });
 
-    function listen(boardPtr) {
+    function listen(gridPtr) {
         return new IO(function() {
             context.canvas.addEventListener('click', function(evt) {
                 var mousePos = getMousePos(this, evt);
                 mousePos.x = Math.floor(mousePos.x / tileSide);
                 mousePos.y = Math.floor(mousePos.y / tileSide);
-                boardPtr.
+                gridPtr.
                     clicked(mousePos).
                     drawCells();
             });
@@ -297,8 +297,8 @@
     }
 
     main = setup.
-            chain(generateBoard).
-            chain(function (boardPtr) { return new IO.of(boardPtr.drawCells()) }).
+            chain(generategrid).
+            chain(function (gridPtr) { return new IO.of(gridPtr.drawCells()) }).
             chain(listen);
 
     main.unsafePerformIO();
