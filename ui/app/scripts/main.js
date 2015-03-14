@@ -131,14 +131,16 @@
 
     Board.prototype.clicked = function(clickPos) {
         var cell = this.updatePos(clickPos).extract();
+        console.log("Clicked: x = " + this.pos.x + ", y = " + this.pos.y);
+        console.log(this.extract());
 
         if (this.selected === null) {
             this.selected = new Pos(-1, -1);
         }
 
         // is this cell already selected?
-        if (this.selected.x === clickPos.x &&
-            this.selected.y === clickPos.y) {
+        if (this.selected.x === this.pos.x &&
+            this.selected.y === this.pos.y) {
             // do nothing
             this.player = (this.player) ? 0 : 1;
             this.selectNextPiece();
@@ -149,7 +151,7 @@
             // not selected and the cell contains a piece
             // -> select this new piece
             if (cell > 0) {
-                this.selected = clickPos;
+                this.selected = this.pos;
             }
 
             // not selected and cell does not contain a piece
@@ -163,12 +165,12 @@
                     return this;
                 }
                 // else ...
-                this.grid[clickPos.y][clickPos.x] =
+                this.grid[this.pos.y][this.pos.x] =
                     this.grid[this.selected.y][this.selected.x];
                 this.grid[this.selected.y][this.selected.x] = 0;
 
-                this.selected.x = clickPos.x;
-                this.selected.y = clickPos.y;
+                this.selected.x = this.pos.x;
+                this.selected.y = this.pos.y;
 
                 this.player = (this.player) ? 0 : 1 ;
                 console.log("moved. switched to player " + this.player);
