@@ -115,16 +115,32 @@
         return this.extend(drawCell);
     }
 
+    // Called from clicked(), so this.pos is the position that has been
+    // clicked. The piece is starting from this.selected
+    Board.prototype.legalMove = function() {
+        // direction dependent: if the current player is 0, they are going
+        // "down" the page, and vice versa for player 1.
+
+        return ((this.player ? this.selected.y > this.pos.y
+                             : this.selected.y < this.pos.y)
+            &&  (this.extract() === 0)
+            && ((Math.abs(this.selected.x - this.pos.x) ===
+                 Math.abs(this.selected.y - this.pos.y))
+            ||  (this.selected.x - this.pos.x) === 0));
+    };
+
     Board.prototype.clicked = function(clickPos) {
         var cell = this.updatePos(clickPos).extract();
+        console.log("Clicked: x = " + this.pos.x + ", y = " + this.pos.y);
+        console.log(this.extract());
 
         if (this.selected === null) {
             this.selected = new Pos(-1, -1);
         }
 
         // is this cell already selected?
-        if (this.selected.x === clickPos.x &&
-            this.selected.y === clickPos.y) {
+        if (this.selected.x === this.pos.x &&
+            this.selected.y === this.pos.y) {
             // do nothing
             this.player = (this.player) ? 0 : 1;
             this.selectNextPiece();
@@ -135,7 +151,7 @@
             // not selected and the cell contains a piece
             // -> select this new piece
             if (cell > 0) {
-                this.selected = clickPos;
+                this.selected = this.pos;
             }
 
             // not selected and cell does not contain a piece
@@ -145,12 +161,16 @@
                  * TODO
                  * Ensure that this is a legal move for the piece
                  */
-                this.grid[clickPos.y][clickPos.x] =
+                if (!this.legalMove()) {
+                    return this;
+                }
+                // else ...
+                this.grid[this.pos.y][this.pos.x] =
                     this.grid[this.selected.y][this.selected.x];
                 this.grid[this.selected.y][this.selected.x] = 0;
 
-                this.selected.x = clickPos.x;
-                this.selected.y = clickPos.y;
+                this.selected.x = this.pos.x;
+                this.selected.y = this.pos.y;
 
                 this.player = (this.player) ? 0 : 1 ;
                 console.log("moved. switched to player " + this.player);
