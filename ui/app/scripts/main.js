@@ -345,9 +345,9 @@
                 var mousePos = getMousePos(this, evt);
                 mousePos.x = Math.floor(mousePos.x / tileSide);
                 mousePos.y = Math.floor(mousePos.y / tileSide);
-                board.
-                    clicked(mousePos).
-                    drawCells();
+                board
+                    .clicked(mousePos)
+                    .drawCells();
             });
             document.getElementById('new-game')
                 .addEventListener('click', function() {
