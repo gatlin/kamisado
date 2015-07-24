@@ -1,5 +1,7 @@
 (function() {
 
+    'use strict';
+
 /***
  * loeb.js
  *
@@ -42,7 +44,7 @@ function memothunk(f) {
         return result; }; }
 
 function constant (y) {
-    return function(ignored) {
+    return function() {
         return y; }; }
 
 function id(x) { return x; }
@@ -141,7 +143,7 @@ IO.prototype.duplicate = function() {
 IO.prototype.extend = Comonad.prototype.extend;
 
 function sequence(fns) {
-    fns.forEach(function(v, k) {
+    fns.forEach(function(v) {
         v.start();
     });
 }
@@ -338,7 +340,7 @@ Pair.prototype.flatten = function() {
 
 Pair.prototype.chain = Monad.prototype.chain;
 
-Pair.prototype.log = function(msg, f) {
+Pair.prototype.log = function(msg) {
     var me = this;
     return me.chain(function(x) {
         return new Pair(msg(x), x); }); };
@@ -446,7 +448,7 @@ Stream.prototype.ap = function(s) {
 
 Stream.prototype.take = function(n) {
     if (this.empty()) { return this; }
-    if (n == 0) { return new Stream(); }
+    if (n === 0) { return new Stream(); }
     var me = this;
     return new Stream(
             this.headV,
@@ -640,7 +642,7 @@ function Sink(fn) {
 }
 
 Sink.prototype.map = function(f) {
-    this.fn = fn.map(f);
+    this.fn = this.fn.map(f);
     return this;
 };
 
@@ -684,10 +686,8 @@ var exports =
     , 'Pair' : Pair
     , 'Store' : Store
     , 'Y' : Y
-    , 'fix' : fix
     , 'wfix' : wfix
     , 'Function' : Function
-    , 'Pair' : Pair
     , 'Sink' : Sink
     } ;
 

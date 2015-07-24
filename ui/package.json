@@ -65,6 +65,18 @@
       ],
       "new-cap": [
         0
+      ],
+      "no-spaced-func": [
+        1
+      ],
+      "no-wrap-func": [
+        1
+      ],
+      "no-underscore-dangle": [
+        0
+      ],
+      "no-undef": [
+        0
       ]
     }
   }
