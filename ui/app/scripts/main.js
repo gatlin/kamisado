@@ -126,7 +126,6 @@
         };
         localStorage.setItem(this.gameId,
                 JSON.stringify(state));
-        console.log('saved as gameId = ' + this.gameId);
     };
 
     Board.prototype.updatePos = function(pos) {
@@ -247,8 +246,6 @@
 
     Board.prototype.clicked = function(clickPos) {
         var cell = this.updatePos(clickPos).extract();
-        console.log("Clicked: x = " + this.pos.x + ", y = " + this.pos.y);
-        console.log(this.extract());
 
         if (this.selected === null) {
             this.selected = new Pos(-1, -1);
@@ -285,8 +282,6 @@
                 this.selected.y = this.pos.y;
 
                 this.player = (this.player) ? 0 : 1 ;
-                console.log("moved. switched to player " + this.player);
-
             }
         }
 
@@ -351,7 +346,6 @@
             });
             document.getElementById('new-game')
                 .addEventListener('click', function() {
-                console.log("clicked new game");
                 location.hash = '';
                 location.reload();
             });
@@ -360,7 +354,7 @@
 
     main = setup.
             chain(getBoard).
-            chain(function (board) { return new IO.of(board.drawCells()); }).
+            chain(function (board) { return IO.of(board.drawCells()); }).
             chain(listen);
 
     main.start();
