@@ -138,21 +138,38 @@
         return this.grid[this.pos.y][this.pos.x];
     };
 
-    Board.prototype.extend = function(f) {
-        var grid = [], x, y;
-        for (y = 0; y < this.grid.length; y++) {
+    Board.prototype.duplicate = function() {
+        var me = this, oldGrid = this.grid;
+        var x, y, grid = [];
+        for (y = 0; y < me.grid.length; y++) {
             grid[y] = [];
-            for (x = 0; x < this.grid[y].length; x++) {
-                grid[y][x] = f(new Board(this.grid, new Pos(x, y),
-                            this.gameId, this.selected, this.player ));
+            for (x = 0; x < me.grid[y].length; x++) {
+                grid[y][x] = new Board(oldGrid, new Pos(x, y),
+                                       me.gameId, me.selected,
+                                       me.player);
             }
         }
         this.grid = grid;
         return this;
     };
 
+    Board.prototype.map = function(f) {
+        var x, y, grid = [], me = this;
+        for (y = 0; y < me.grid.length; y++) {
+            grid[y] = [];
+            for (x = 0; x < me.grid[y].length; x++) {
+                grid[y][x] = f(me.grid[y][x]);
+            }
+        }
+        this.grid = grid;
+        return this;
+    };
+
+    Board.prototype.extend = Comonad.prototype.extend;
+
     // Called on every refresh for each cell on the grid.
-    function drawCell (ptr) {
+    function drawCell (ptr) { return new IO(function() {
+
         // draw the background color
         var cell = ptr.extract();
         var cellColor = colors[tileColorPattern[ptr.pos.y][ptr.pos.x]];
@@ -206,7 +223,7 @@
         }
 
         return cell;
-    }
+    }).start(); }
 
     Board.prototype.drawCells = function() {
         return this.extend(drawCell);
@@ -294,33 +311,6 @@
         }
     };
 
-    // IO monad
-    function IO (unsafePerformIO) {
-        this.unsafePerformIO = unsafePerformIO;
-    }
-
-    IO.of = function(o) {
-        return new IO(function() {
-            return o;
-        });
-    };
-
-    IO.prototype.chain = function(f) {
-        var io = this;
-        return new IO(function() {
-            return f(io.unsafePerformIO()).unsafePerformIO();
-        });
-    };
-
-    IO.prototype.fork = function() {
-        var io = this;
-        return new IO(function() {
-            setTimeout(function() {
-                io.unsafePerformIO();
-            }, 0);
-        });
-    };
-
     function getBoard() {
         return new IO(function() {
             var hash = parseHash();
@@ -373,6 +363,6 @@
             chain(function (board) { return new IO.of(board.drawCells()); }).
             chain(listen);
 
-    main.unsafePerformIO();
+    main.start();
 
 })();
