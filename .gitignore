@@ -1,5 +1,11 @@
 node_modules/
 dist/
+ui/dist/
+ui/test/
+ui/.bowerrc
+ui/.editorconfig
+ui/.yo-rc.json
+
 .tmp
 bower_components/
 *.log

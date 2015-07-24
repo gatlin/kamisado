@@ -63,15 +63,6 @@
         return this;
     };
 
-    function parseHash() {
-        var hash = location.hash.slice(1);
-        if (hash === "") {
-            hash = guid();
-            location.hash = "#" + hash;
-        }
-        return hash;
-    }
-
     // globally unique ID generator
     // usage: guid() -- different output each time
     var guid = (function() {
@@ -82,10 +73,19 @@
         }
 
         return function() {
-            return s4() + s4 () + '-' + s4() + '-' + s4() + '-' +
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
                    s4() + '-' + s4() + s4() + s4();
         };
     })();
+
+    function parseHash() {
+        var hash = location.hash.slice(1);
+        if (hash === '') {
+            hash = guid();
+            location.hash = '#' + hash;
+        }
+        return hash;
+    }
 
     // simple coordinate pair
     function Pos(x, y) {
@@ -114,19 +114,19 @@
 
         this.gameId = typeof gameId !== 'undefined'
             ? gameId
-            : "test-game";
+            : 'test-game';
     }
 
     Board.prototype.save = function() {
         var state = {
-            grid : this.grid,
-            player : this.player,
-            gameId : this.gameId,
+            grid     : this.grid,
+            player   : this.player,
+            gameId   : this.gameId,
             selected : this.selected
         };
         localStorage.setItem(this.gameId,
                 JSON.stringify(state));
-        console.log("saved as gameId = " + this.gameId);
+        console.log('saved as gameId = ' + this.gameId);
     };
 
     Board.prototype.updatePos = function(pos) {
@@ -171,7 +171,7 @@
         };
 
         var bezel = (cell > size) ? colors[9] : colors[8];
-        var color = colors[(cell -1)%8];
+        var color = colors[(cell - 1) % 8];
 
         // bezel
         context.beginPath();
@@ -210,7 +210,7 @@
 
     Board.prototype.drawCells = function() {
         return this.extend(drawCell);
-    }
+    };
 
     // Called from clicked(), so this.pos is the position that has been
     // clicked. The piece is starting from this.selected
@@ -276,7 +276,7 @@
         this.selectNextPiece();
         this.save();
         return this;
-    }
+    };
 
     Board.prototype.selectNextPiece = function() {
         var x, y, nextCell;
@@ -307,14 +307,14 @@
 
     IO.prototype.chain = function(f) {
         var io = this;
-        return new IO (function() {
+        return new IO(function() {
             return f(io.unsafePerformIO()).unsafePerformIO();
         });
     };
 
     IO.prototype.fork = function() {
         var io = this;
-        return new IO (function() {
+        return new IO(function() {
             setTimeout(function() {
                 io.unsafePerformIO();
             }, 0);
@@ -322,7 +322,7 @@
     };
 
     function getBoard() {
-        return new IO (function() {
+        return new IO(function() {
             var hash = parseHash();
             var saved = JSON.parse(localStorage.getItem(hash));
             if (saved === null) {
@@ -342,7 +342,7 @@
         });
     }
 
-    setup = new IO (function() {
+    setup = new IO(function() {
         context.canvas.width = 0.9*(min(wWidth, wHeight));
         context.canvas.height = context.canvas.width;
         tileSide = ((0.9*min(wWidth, wHeight)) / size);
@@ -360,7 +360,7 @@
                     drawCells();
             });
             document.getElementById('new-game')
-                .addEventListener('click', function(evt) {
+                .addEventListener('click', function() {
                 console.log("clicked new game");
                 location.hash = '';
                 location.reload();
@@ -370,7 +370,7 @@
 
     main = setup.
             chain(getBoard).
-            chain(function (board) { return new IO.of(board.drawCells()) }).
+            chain(function (board) { return new IO.of(board.drawCells()); }).
             chain(listen);
 
     main.unsafePerformIO();

@@ -7,5 +7,12 @@
     "HTML5-Reset": "~2.1.2",
     "chai": "~1.10.0",
     "bootstrap": "~3.3.2"
+  },
+  "resolutions": {
+    "chai": "~1.10.0"
+  },
+  "devDependencies": {
+    "chai": "~3.2.0",
+    "mocha": "~2.2.5"
   }
 }
