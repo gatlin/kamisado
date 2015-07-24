@@ -644,6 +644,9 @@ Sink.prototype.map = function(f) {
     return this;
 };
 
+Sink.prototype.force = Functor.prototype.force;
+Sink.prototype.delay = Functor.prototype.delay;
+
 Sink.prototype.extract = function() {
     return this.fn.extract();
 };
