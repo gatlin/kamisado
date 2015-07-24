@@ -240,8 +240,8 @@
         return ((this.player ? this.selected.y > this.pos.y
                              : this.selected.y < this.pos.y)
             &&  (this.extract() === 0)
-            && ((Math.abs(this.selected.x - this.pos.x) ===
-                 Math.abs(this.selected.y - this.pos.y))
+            && ((Math.abs(this.selected.x - this.pos.x)
+            ===  Math.abs(this.selected.y - this.pos.y))
             ||  (this.selected.x - this.pos.x) === 0));
     };
 
@@ -345,9 +345,9 @@
                 var mousePos = getMousePos(this, evt);
                 mousePos.x = Math.floor(mousePos.x / tileSide);
                 mousePos.y = Math.floor(mousePos.y / tileSide);
-                board.
-                    clicked(mousePos).
-                    drawCells();
+                board
+                    .clicked(mousePos)
+                    .drawCells();
             });
             document.getElementById('new-game')
                 .addEventListener('click', function() {
