@@ -76,7 +76,7 @@ Monad.prototype.chain = function(f) {
  * Comonad function defaults
  */
 function Comonad() { return; }
-Comonad.prototype.extend = function(f) {
+Comonad.prototype.convolve = function(f) {
     return this.duplicate().map(f);
 };
 
@@ -91,7 +91,7 @@ Comonad.prototype.evaluate = function() {
 function wfix(w) {
     return memothunk(function() {
         return w.extract()(
-            w.extend(function(x) {
+            w.convolve(function(x) {
                 return wfix(x); })); }); }
 
 /***
@@ -140,7 +140,7 @@ IO.prototype.duplicate = function() {
     });
 };
 
-IO.prototype.extend = Comonad.prototype.extend;
+IO.prototype.convolve = Comonad.prototype.convolve;
 
 function sequence(fns) {
     fns.forEach(function(v) {
@@ -194,7 +194,7 @@ Function.prototype.duplicate = function() {
         return (function(y) {
             return me(y.concat(x)); }); }); };
 
-Function.prototype.extend = Comonad.prototype.extend;
+Function.prototype.convolve = Comonad.prototype.convolve;
 
 /***
  * Arrays are monads!
@@ -272,10 +272,10 @@ Cursor.prototype.duplicate = function() {
     return new Cursor(ary, me.index);
 };
 
-Cursor.prototype.extend = Comonad.prototype.extend;
+Cursor.prototype.convolve = Comonad.prototype.convolve;
 
 Cursor.prototype.ap = function(wa) {
-    return this.extend(function(wf) {
+    return this.convolve(function(wf) {
         return memothunk(function() {
             return wf.extract()(wa.at(wf.index));
         }); }) ;
@@ -288,7 +288,7 @@ Cursor.prototype.ap = function(wa) {
  * using the default implementation of `evaluate` I cheat a bit.
  */
 Cursor.prototype.evaluate = function() {
-    return this.extend(wfix); };
+    return this.convolve(wfix); };
 
 Cursor.prototype.setIndex = function(idx) {
     this.index = idx;
@@ -322,10 +322,10 @@ Pair.prototype.duplicate = function() {
 
     return new Pair(_1, me); } ;
 
-Pair.prototype.extend = Comonad.prototype.extend;
+Pair.prototype.convolve = Comonad.prototype.convolve;
 
 Pair.prototype.evaluate = function() {
-    return this.extend(wfix);
+    return this.convolve(wfix);
 
 };
 
@@ -501,7 +501,7 @@ Stream.prototype.duplicate = function() {
     });
 };
 
-Stream.prototype.extend = Comonad.prototype.extend;
+Stream.prototype.convolve = Comonad.prototype.convolve;
 Stream.prototype.evaluate = Comonad.prototype.evaluate;
 
 Stream.fromArray = function (ary) {
@@ -574,7 +574,7 @@ Tape.prototype.duplicate = function() {
                         function(t) { return t.shiftR(); },
                         me); };
 
-Tape.prototype.extend = Comonad.prototype.extend;
+Tape.prototype.convolve = Comonad.prototype.convolve;
 Tape.prototype.evaluate = Comonad.prototype.evaluate;
 
 Tape.prototype.ap = function(wa) {
@@ -620,7 +620,7 @@ Store.prototype.duplicate = function() {
     return new Store(me.lookup,
             new Store(me.lookup, me.index())) ; } ;
 
-Store.prototype.extend = Comonad.prototype.extend;
+Store.prototype.convolve = Comonad.prototype.convolve;
 
 /***
  * Sink
@@ -658,10 +658,10 @@ Sink.prototype.duplicate = function() {
     return this;
 };
 
-Sink.prototype.extend = Comonad.prototype.extend;
+Sink.prototype.convolve = Comonad.prototype.convolve;
 
 Sink.prototype.send = function(x) {
-    this.fn = this.fn.extend(function(f) {
+    this.fn = this.fn.convolve(function(f) {
         return f([x]);
     });
     return this;

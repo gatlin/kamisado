@@ -5,7 +5,13 @@
      * Implementation notes:
      *
      * - a grid is indexed (y,x) because ultimately it's easier for me to
-     *   write array literals indexed like this
+     *   write array literals indexed like this. Additionally,
+     *
+     * - the origin of the grid is the top-left corner, with the positive
+     *   coordinates extending down and to the right.
+     *
+     * - why yes, I make extensive use of modifying builtin JavaScript object
+     *   prototypes.
      */
 
     /*
@@ -99,13 +105,46 @@
                        evt.clientY - rect.top);
     }
 
-    // comonadic wrapper around a grid state
-    function Board(grid, pos, gameId, selected, player) {
-        this.grid = grid;
+    /*
+     * A comonadic wrapper around grid state.
+     *
+     * `grid`: the state of the game. It is an array of integers corresponding
+     * to the players' pieces. A number n may be interpreted as follows:
+     *
+     *   - 0 denotes an empty cell
+     *   - a number less than 9 denotes a player 0 piece
+     *   - a number greater than 9 denotes a player 1 piece
+     *
+     *  The color is determined by computing (n-1) modulo 8 and using this as
+     *  an index into the global `colors` array.
+     *
+     *  `pos`: stores the coordinate of the current "position of interest,"
+     *  which depends on the context.
+     *
+     *    - When the current player clicks a cell to send their active piece,
+     *    `pos` stores the coordinates of that cell.
+     *
+     *    - When convolving a kernel function (eg, `drawCell`) over the whole
+     *    board, `pos` stores the coordinate in focus.
+     *
+     * `gameId`: nothing fancy here, just the unique id of the game. Used when
+     * loading and storing local game state, and also when communicating over
+     * the network.
+     *
+     * `active`: the coordinate of the piece which is currently active (has a
+     * dot in the middle).
+     *
+     * `player`: which player is currently moving?
+     *
+     * TODO move these last three properties into a single state object.
+     *
+     */
+    function Board(grid, pos, gameId, active, player) {
+        this.grid = grid; // the state grid
         this.pos   = pos;
 
-        this.selected = typeof selected !== 'undefined'
-            ? selected
+        this.active = typeof active !== 'undefined'
+            ? active
             : null;
 
         this.player = typeof player !== 'undefined'
@@ -122,36 +161,19 @@
             grid     : this.grid,
             player   : this.player,
             gameId   : this.gameId,
-            selected : this.selected
+            active : this.active
         };
         localStorage.setItem(this.gameId,
                 JSON.stringify(state));
     };
 
-    Board.prototype.updatePos = function(pos) {
+    // Wrapper of dubious utility. Maybe I'll want to add behavior later?
+    Board.prototype.setPos = function(pos) {
         this.pos = pos;
         return this;
     };
 
-    Board.prototype.extract = function() {
-        return this.grid[this.pos.y][this.pos.x];
-    };
-
-    Board.prototype.duplicate = function() {
-        var me = this, oldGrid = this.grid;
-        var x, y, grid = [];
-        for (y = 0; y < me.grid.length; y++) {
-            grid[y] = [];
-            for (x = 0; x < me.grid[y].length; x++) {
-                grid[y][x] = new Board(oldGrid, new Pos(x, y),
-                                       me.gameId, me.selected,
-                                       me.player);
-            }
-        }
-        this.grid = grid;
-        return this;
-    };
-
+    // Modify every cell in the board by applying a given function `f` to it.
     Board.prototype.map = function(f) {
         var x, y, grid = [], me = this;
         for (y = 0; y < me.grid.length; y++) {
@@ -164,23 +186,58 @@
         return this;
     };
 
-    Board.prototype.extend = Comonad.prototype.extend;
+    // Retrieve the value of the grid at `pos`.
+    Board.prototype.extract = function() {
+        return this.grid[this.pos.y][this.pos.x];
+    };
 
-    // Called on every refresh for each cell on the grid.
-    function drawCell (ptr) { return new IO(function() {
+    /* Takes a board and creates a "board of boards": each cell holds a nearly
+     * identical copy of the original board, with each new board's `pos`
+     * corresponding to the coordinate of the cell in which it is contained.
+     *
+     * When used in combination with `map` this gives you the ability to apply
+     * 2-d convolutions to the game board.
+     */
+    Board.prototype.duplicate = function() {
+        var me = this, oldGrid = this.grid;
+        var x, y, grid = [];
+        for (y = 0; y < me.grid.length; y++) {
+            grid[y] = [];
+            for (x = 0; x < me.grid[y].length; x++) {
+                grid[y][x] = new Board(oldGrid, new Pos(x, y),
+                                       me.gameId, me.active,
+                                       me.player);
+            }
+        }
+        this.grid = grid;
+        return this;
+    };
+
+    /*
+     * Convolution is similar to mapping, except the function being mapped over
+     * the board is not simply given the value of each successive cell, but is
+     * given an entire board with an updated `pos` corresponding to the
+     * position of interest.
+     *
+     * Read `drawCell` and `drawCells` to see this in action.
+     */
+    Board.prototype.convolve = Comonad.prototype.convolve;
+
+    // A convolution kernel that draws one cell of a given board.
+    function drawCell (board) { return new IO(function() {
 
         // draw the background color
-        var cell = ptr.extract();
-        var cellColor = colors[tileColorPattern[ptr.pos.y][ptr.pos.x]];
+        var cell = board.extract(); // `pos`
+        var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
         context.fillStyle = cellColor;
-        context.fillRect(ptr.pos.x * tileSide, ptr.pos.y * tileSide,
+        context.fillRect(board.pos.x * tileSide, board.pos.y * tileSide,
                                      tileSide,             tileSide);
 
         if (cell === 0) { return cell; }
 
         // if there is a piece on this cell, draw it as well
-        var x = ptr.pos.x + 1;
-        var y = ptr.pos.y + 1;
+        var x = board.pos.x + 1;
+        var y = board.pos.y + 1;
         var center = {
             x: ((x) * tileSide) - (tileSide / 2),
             y: ((y) * tileSide) - (tileSide / 2)
@@ -209,9 +266,9 @@
         context.strokeStyle = color;
         context.stroke();
 
-        if (ptr.selected !== null         &&
-            ptr.selected.x === ptr.pos.x &&
-            ptr.selected.y === ptr.pos.y) {
+        if (board.active !== null         &&
+            board.active.x === board.pos.x &&
+            board.active.y === board.pos.y) {
             context.beginPath();
             context.arc(center.x, center.y, radius * 0.5, 0,
                     Math.PI*2, false);
@@ -224,36 +281,38 @@
         return cell;
     }).start(); }
 
+    // Drawing all the cells drawing a single cell, extended to every cell :)
     Board.prototype.drawCells = function() {
-        return this.extend(drawCell);
+        return this.convolve(drawCell);
     };
 
     // Called from clicked(), so this.pos is the position that has been
-    // clicked. The piece is starting from this.selected
+    // clicked. The piece is starting from this.active
     Board.prototype.legalMove = function() {
         // direction dependent: if the current player is 0, they are going
         // "down" the page, and vice versa for player 1.
 
         // FIXME
         // This does not take into account if any pieces are blocking you
-        return ((this.player ? this.selected.y > this.pos.y
-                             : this.selected.y < this.pos.y)
+        return ((this.player ? this.active.y > this.pos.y
+                             : this.active.y < this.pos.y)
             &&  (this.extract() === 0)
-            && ((Math.abs(this.selected.x - this.pos.x)
-            ===  Math.abs(this.selected.y - this.pos.y))
-            ||  (this.selected.x - this.pos.x) === 0));
+            && ((Math.abs(this.active.x - this.pos.x)
+            ===  Math.abs(this.active.y - this.pos.y))
+            ||  (this.active.x - this.pos.x) === 0));
     };
 
+    // Click event handler.
     Board.prototype.clicked = function(clickPos) {
-        var cell = this.updatePos(clickPos).extract();
+        var cell = this.setPos(clickPos).extract();
 
-        if (this.selected === null) {
-            this.selected = new Pos(-1, -1);
+        if (this.active === null) {
+            this.active = new Pos(-1, -1);
         }
 
-        // is this cell already selected?
-        if (this.selected.x === this.pos.x &&
-            this.selected.y === this.pos.y) {
+        // is this cell already active?
+        if (this.active.x === this.pos.x &&
+            this.active.y === this.pos.y) {
             // do nothing
             this.player = (this.player) ? 0 : 1;
             this.selectNextPiece();
@@ -261,25 +320,25 @@
         }
 
         else {
-            // not selected and the cell contains a piece
+            // not active and the cell contains a piece
             // -> select this new piece
             if (cell > 0) {
-                this.selected = this.pos;
+                this.active = this.pos;
             }
 
-            // not selected and cell does not contain a piece
-            // -> move the currently selected piece here
+            // not active and cell does not contain a piece
+            // -> move the currently active piece here
             if (cell === 0) {
                 if (!this.legalMove()) {
                     return this;
                 }
                 // else ...
                 this.grid[this.pos.y][this.pos.x] =
-                    this.grid[this.selected.y][this.selected.x];
-                this.grid[this.selected.y][this.selected.x] = 0;
+                    this.grid[this.active.y][this.active.x];
+                this.grid[this.active.y][this.active.x] = 0;
 
-                this.selected.x = this.pos.x;
-                this.selected.y = this.pos.y;
+                this.active.x = this.pos.x;
+                this.active.y = this.pos.y;
 
                 this.player = (this.player) ? 0 : 1 ;
             }
@@ -290,22 +349,24 @@
         return this;
     };
 
+    // TODO switch to using a map (we already wrote this loop!)
     Board.prototype.selectNextPiece = function() {
         var x, y, nextCell;
-        var selectedColor = tileColorPattern[this.selected.y][this.selected.x];
-        var nextPiece = (selectedColor + 1) + (this.player * 8);
+        var activeColor = tileColorPattern[this.active.y][this.active.x];
+        var nextPiece = (activeColor + 1) + (this.player * 8);
         for (y = 0; y < this.grid.length; y++) {
             for (x = 0; x < this.grid[y].length; x++) {
                 nextCell = this.grid[y][x];
                 if (nextCell === nextPiece) {
-                    this.selected.x = x;
-                    this.selected.y = y;
+                    this.active.x = x;
+                    this.active.y = y;
                     break;
                 }
             }
         }
     };
 
+    // Retrieve the saved board from local storage or create a new one.
     function getBoard() {
         return new IO(function() {
             var hash = parseHash();
@@ -322,11 +383,12 @@
             else {
                 return new Board(saved.grid, new Pos(0, 0),
                                  saved.gameId,
-                                 saved.selected, saved.player);
+                                 saved.active, saved.player);
             }
         });
     }
 
+    // Preliminary canvas initialization and viewport configuration.
     setup = new IO(function() {
         context.canvas.width = 0.9*(min(wWidth, wHeight));
         context.canvas.height = context.canvas.width;
@@ -334,8 +396,10 @@
         radius = (tileSide * 0.9) / 2;
     });
 
+    // Register event handlers.
     function listen(board) {
         return new IO(function() {
+            // Register our board click handler
             context.canvas.addEventListener('click', function(evt) {
                 var mousePos = getMousePos(this, evt);
                 mousePos.x = Math.floor(mousePos.x / tileSide);
@@ -344,6 +408,7 @@
                     .clicked(mousePos)
                     .drawCells();
             });
+            // Register a handler for the "new game" button.
             document.getElementById('new-game')
                 .addEventListener('click', function() {
                 location.hash = '';
@@ -353,9 +418,9 @@
     }
 
     main = setup.
-            chain(getBoard).
-            chain(function (board) { return IO.of(board.drawCells()); }).
-            chain(listen);
+           chain(getBoard).
+           chain(function (board) { return IO.of(board.drawCells()); }).
+           chain(listen);
 
     main.start();
 
