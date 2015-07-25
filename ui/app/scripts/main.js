@@ -286,6 +286,30 @@
         return this.convolve(drawCell);
     };
 
+    /*
+     * Are all the cells on the path between these two cells empty? Assumes
+     * they lie on the same column or a diagonal line with slope = 1.
+     */
+    Board.prototype.emptyPath = function(srcPos, dstPos) {
+        // we can assume they are not on the sam row
+        var lX = (srcPos.x < dstPos.x) ? srcPos.x : dstPos.x;
+        var rX = (srcPos.x > dstPos.x) ? srcPos.x : dstPos.x;
+        var tY = (srcPos.y < dstPos.y) ? srcPos.y : dstPos.y;
+        var bY = (srcPos.y > dstPos.y) ? srcPos.y : dstPos.y;
+
+        var y, x, pathIsEmpty = true;
+        for (y = tY+1; y < bY; y++) {
+            for (x = lX; x < rX; x++) {
+                if (this.grid[y][x] !== 0) {
+                    pathIsEmpty = false;
+                    break;
+                }
+            }
+        }
+
+        return pathIsEmpty;
+    };
+
     // Called from clicked(), so this.pos is the position that has been
     // clicked. The piece is starting from this.active
     Board.prototype.legalMove = function() {
@@ -299,7 +323,8 @@
             &&  (this.extract() === 0)
             && ((Math.abs(this.active.x - this.pos.x)
             ===  Math.abs(this.active.y - this.pos.y))
-            ||  (this.active.x - this.pos.x) === 0));
+            ||  (this.active.x - this.pos.x) === 0))
+            && (this.emptyPath(this.active,this.pos));
     };
 
     // Click event handler.
