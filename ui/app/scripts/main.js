@@ -313,9 +313,6 @@
     Board.prototype.legalMove = function() {
         // direction dependent: if the current player is 0, they are going
         // "down" the page, and vice versa for player 1.
-
-        // FIXME
-        // This does not take into account if any pieces are blocking you
         return ((this.player ? this.active.y > this.pos.y
                              : this.active.y < this.pos.y)
             &&  (this.extract() === 0)
