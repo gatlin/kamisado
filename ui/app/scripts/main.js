@@ -291,22 +291,20 @@
      * they lie on the same column or a diagonal line with slope = 1.
      */
     Board.prototype.emptyPath = function(srcPos, dstPos) {
-        // we can assume they are not on the sam row
-        var lX = (srcPos.x < dstPos.x) ? srcPos.x : dstPos.x;
-        var rX = (srcPos.x > dstPos.x) ? srcPos.x : dstPos.x;
-        var tY = (srcPos.y < dstPos.y) ? srcPos.y : dstPos.y;
-        var bY = (srcPos.y > dstPos.y) ? srcPos.y : dstPos.y;
-
-        var y, x, pathIsEmpty = true;
-        for (y = tY+1; y < bY; y++) {
-            for (x = lX; x < rX; x++) {
-                if (this.grid[y][x] !== 0) {
-                    pathIsEmpty = false;
-                    break;
-                }
+        var pathIsEmpty = true
+          , dX = dstPos.x - srcPos.x
+          , dY = dstPos.y - srcPos.y
+          , stepX = (dX ? Math.abs(dX)/dX : 0)
+          , stepY = Math.abs(dY)/dY
+          , y = srcPos.y+stepY, x = srcPos.x+stepX;
+        while (y !== dstPos.y && pathIsEmpty) {
+            console.log('( '+x+' , '+y+' )');
+            if (this.grid[y][x]) {
+                pathIsEmpty = false;
             }
+            y += stepY;
+            x += stepX;
         }
-
         return pathIsEmpty;
     };
 
@@ -448,5 +446,4 @@
            chain(listen);
 
     main.start();
-
 })();
