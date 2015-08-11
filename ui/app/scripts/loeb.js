@@ -228,7 +228,7 @@ Array.prototype.flatMap = Monad.prototype.flatMap;
 
 Array.prototype.ap = function(other) {
     return this.zipWith(other, function(f, a) {
-        return (function() { return f(a); }); }) ; } ;
+        return memothunk(function() { return f(a); }); }) ; } ;
 
 /***
  * A pointed array
@@ -275,20 +275,10 @@ Cursor.prototype.duplicate = function() {
 Cursor.prototype.convolve = Comonad.prototype.convolve;
 
 Cursor.prototype.ap = function(wa) {
-    return this.convolve(function(wf) {
-        return memothunk(function() {
-            return wf.extract()(wa.at(wf.index));
-        }); }) ;
+    return new Cursor(this.array.ap(wa.array), 0);
 };
 
-/*
- * FIXME
- *
- * Current implementation of `ap` isn't quite right, I suppose, so instead of
- * using the default implementation of `evaluate` I cheat a bit.
- */
-Cursor.prototype.evaluate = function() {
-    return this.convolve(wfix); };
+Cursor.prototype.evaluate = Comonad.prototype.evaluate;
 
 Cursor.prototype.setIndex = function(idx) {
     this.index = idx;
@@ -297,6 +287,18 @@ Cursor.prototype.setIndex = function(idx) {
 
 Cursor.prototype.at = function(idx) {
     return this.array[idx];
+};
+
+Cursor.prototype.toArray = function() {
+    return this.array; };
+
+Cursor.prototype.update = function(idx, val) {
+    var arr = [];
+    for (var i = 0; i < this.array.length; i++) {
+        arr[i] = this.array[i];
+    }
+    arr[idx] = val;
+    return new Cursor(arr, this.index);
 };
 
 /***
@@ -349,6 +351,9 @@ Pair.prototype.yield = function() {
     var me = this;
     return me.flatMap(function(x) {
         return new Pair(function(f) { return f(x); }, x); }); };
+
+Pair.prototype.evaluate = function() {
+    return this.extend(wfix); };
 
 /**
  * An infinite, lazily-generated Stream
@@ -483,6 +488,17 @@ Stream.unfold = function(gen, seed) {
     });
 };
 
+Stream.prototype.append = function(other) {
+    if (this.empty()) {
+        return other;
+    }
+    var me = this;
+    return new Stream(me.headV,
+                      function() {
+                          return me.tail().append(other);
+                      });
+};
+
 // Streams are monads
 Stream.of = function(x) { return Stream.repeat(x); };
 
@@ -510,6 +526,18 @@ Stream.fromArray = function (ary) {
     }
     return new Stream(ary[0], function() { return Stream.fromArray(ary.slice(1)); });
 };
+
+/*
+ * Given a function which processes a list, collect the stream without actually
+ * evaluating the function; instead, this returns a new function which will
+ * actually process the list when its `extract()` method is called.
+ */
+Stream.prototype.collect = function(f) {
+    var me = this;
+    return me.reduce(function(acc, val) {
+        return acc.convolve(function(sink) {
+            return sink([val]); }); },
+        f); };
 
 /***
  * Tape
@@ -622,52 +650,6 @@ Store.prototype.duplicate = function() {
 
 Store.prototype.convolve = Comonad.prototype.convolve;
 
-/***
- * Sink
- *
- * A Sink is an object which can receive an arbitrary number of input values,
- * one at a time over different calls, and then batch-process them all at once
- * using a function you may specify.
- *
- * Example:
- *
- *     function log(x) { console.log(x); }
- *     var s = new Sink(function(xs) { xs.map(log); });
- *     s.send("First");
- *     s.send("Second");
- *     s.extract() <-- will print both values in succession to the console
- */
-function Sink(fn) {
-    this.fn = fn;
-}
-
-Sink.prototype.map = function(f) {
-    this.fn = this.fn.map(f);
-    return this;
-};
-
-Sink.prototype.force = Functor.prototype.force;
-Sink.prototype.delay = Functor.prototype.delay;
-
-Sink.prototype.extract = function() {
-    return this.fn.extract();
-};
-
-Sink.prototype.duplicate = function() {
-    this.fn = this.fn.duplicate();
-    return this;
-};
-
-Sink.prototype.convolve = Comonad.prototype.convolve;
-
-Sink.prototype.send = function(x) {
-    this.fn = this.fn.convolve(function(f) {
-        return f([x]);
-    });
-    return this;
-};
-
-
 var exports =
     { 'Monad' : Monad
     , 'Comonad' : Comonad
@@ -688,7 +670,6 @@ var exports =
     , 'Y' : Y
     , 'wfix' : wfix
     , 'Function' : Function
-    , 'Sink' : Sink
     } ;
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
@@ -701,4 +682,3 @@ else {
 }
 
 })();
-
