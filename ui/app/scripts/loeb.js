@@ -68,7 +68,7 @@ Functor.prototype.delay = function() {
  */
 
 function Monad() { return; }
-Monad.prototype.chain = function(f) {
+Monad.prototype.flatMap = function(f) {
     return this.map(f).flatten();
 };
 
@@ -107,7 +107,7 @@ IO.of = function(o) {
     });
 };
 
-IO.prototype.chain = function(f) {
+IO.prototype.flatMap = function(f) {
     var io = this;
     return new IO(function() {
         return f(io.start()).start();
@@ -178,11 +178,11 @@ Function.prototype.flatten = function() {
     });
 };
 
-Function.prototype.chain = Monad.prototype.chain;
+Function.prototype.flatMap = Monad.prototype.flatMap;
 
 Function.prototype.read = function(f) {
     var me = this;
-    return me.chain(function(x) {
+    return me.flatMap(function(x) {
         return function(threaded) {
             return f(threaded, x); }; }); };
 
@@ -224,7 +224,7 @@ Array.prototype.flatten = function() {
     }, []);
 };
 
-Array.prototype.chain = Monad.prototype.chain;
+Array.prototype.flatMap = Monad.prototype.flatMap;
 
 Array.prototype.ap = function(other) {
     return this.zipWith(other, function(f, a) {
@@ -338,16 +338,16 @@ Pair.prototype.flatten = function() {
     var snd = this.snd();
     return new Pair(me.fst().concat(snd.fst()), snd.snd()); };
 
-Pair.prototype.chain = Monad.prototype.chain;
+Pair.prototype.flatMap = Monad.prototype.flatMap;
 
 Pair.prototype.log = function(msg) {
     var me = this;
-    return me.chain(function(x) {
+    return me.flatMap(function(x) {
         return new Pair(msg(x), x); }); };
 
 Pair.prototype.yield = function() {
     var me = this;
-    return me.chain(function(x) {
+    return me.flatMap(function(x) {
         return new Pair(function(f) { return f(x); }, x); }); };
 
 /**
@@ -490,7 +490,7 @@ Stream.prototype.flatten = function() {
     return this.map(function(sx) { return sx.head(); });
 };
 
-Stream.prototype.chain = Monad.prototype.chain;
+Stream.prototype.flatMap = Monad.prototype.flatMap;
 
 // Streams are comonads
 Stream.prototype.extract = Stream.prototype.head;

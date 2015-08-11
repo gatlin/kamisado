@@ -438,9 +438,9 @@
     }
 
     main = setup.
-           chain(getBoard).
-           chain(function (board) { return IO.of(board.drawCells()); }).
-           chain(listen);
+           flatMap(getBoard).
+           flatMap(function (board) { return IO.of(board.drawCells()); }).
+           flatMap(listen);
 
     main.start();
 })();
