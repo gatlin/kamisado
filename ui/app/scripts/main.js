@@ -416,18 +416,23 @@
         radius = (tileSide * 0.9) / 2;
     });
 
+    function newMoveHandler(board, canvas) {
+        return function(evt) {
+            var mousePos = getMousePos(canvas, evt);
+            mousePos.x = Math.floor(mousePos.x / tileSide);
+            mousePos.y = Math.floor(mousePos.y / tileSide);
+            board
+                .clicked(mousePos)
+                .drawCells();
+        };
+    }
+
     // Register event handlers.
     function listen(board) {
         return new IO(function() {
             // Register our board click handler
-            context.canvas.addEventListener('click', function(evt) {
-                var mousePos = getMousePos(this, evt);
-                mousePos.x = Math.floor(mousePos.x / tileSide);
-                mousePos.y = Math.floor(mousePos.y / tileSide);
-                board
-                    .clicked(mousePos)
-                    .drawCells();
-            });
+            context.canvas.addEventListener('click',
+                    newMoveHandler(board, context.canvas));
             // Register a handler for the "new game" button.
             document.getElementById('new-game')
                 .addEventListener('click', function() {
