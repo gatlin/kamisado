@@ -100,6 +100,13 @@ var app = App.init()
                 el('div', { 'class': 'container' }, [
                     el('button', { 'id':'reset-btn' }, [
                         "Reset game"
+                    ]),
+                    el('p', {}, [ "Made with ",
+                        el('a', { 'href': 'https://github.com/gatlin/Alm' },
+                            [ "Alm" ] ),
+                        ". ",
+                        el('a', { 'href': 'https://github.com/gatlin/Kamisado' },
+                            [ "Source code on GitHub." ])
                     ])
                 ])
             ])
