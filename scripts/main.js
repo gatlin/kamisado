@@ -50,8 +50,8 @@ var app = App.init()
     /**
      * Listen for update events (which for now are positions). Because
      * mailboxes always fire at least once with their first value, we know the
-     * first time this is run that `evt` will be null. If that's the case, we
-     * simply use an arbitrary starting position.
+     * first time this is run that `pos` will be null. If that's the case, we
+     * don't register a click with the board.
      *
      * If the canvas drawing context hasn't been initialized yet, we do so here
      * as well. This happens here because `updates` will only emit an event
@@ -62,13 +62,15 @@ var app = App.init()
      * redraw, and return the updated model to save it.
      */
     updates.signal
-        .reduce(initial_model, function(evt, model) {
-            let pos = (evt !== null) ? evt : new Pos(0,0);
+        .reduce(initial_model, function(pos, model) {
             // If we haven't gotten a canvas context yet, let's do so now
             if (!model.context) {
                 model.context = alm.byId('board_canvas').getContext('2d');
             }
-            model.board = model.board.clicked(pos).drawCells(model.context);
+            if (pos) {
+                model.board = model.board.clicked(pos);
+            }
+            model.board = model.board.drawCells(model.context);
             return model;
         })
         .recv((model) => utils.saveGame(model.board));
