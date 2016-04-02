@@ -9,14 +9,18 @@ Kamisado!
 Two players each have 8 pieces across the board from one another. The object of
 the game is to get one of your pieces to the other side.
 
-On the first turn, the black player selects a piece to move (it is "active").
-The player may move their piece any number of tiles forward, or diagonally
-forward, until they reach the edge of the board or another piece.
+Black player goes first. On the first move the player must select a piece to be
+*active*. Only active pieces may be moved. Active pieces have dots in the
+middle of them.
+
+On each turn a player must select a tile for their active piece to move to. A
+piece may only go directly forward or diagonally forward. A piece may be moved
+any distance but it may not land on or skip over another piece.
 
 The game will not let you make an illegal move.
 
-The color of the tile you move your piece to dictates your opponent's active
-piece on the next round; you will see it now has a dot in the middle of it.
+The color of the tile you move your piece to becomes the color of your
+opponent's active piece.
 
 When a player wins the board resets and starts a new game.
 
