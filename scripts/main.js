@@ -84,10 +84,22 @@ var app = App.init()
         })
         .recv((model) => utils.saveGame(model.board));
 
+    /**
+     * A mailbox called `canvas` is subscribed below to the HTML canvas element
+     * on which we draw the game. Whenever it is re-rendered this mailbox will
+     * be sent the actual DOM node so that the new drawing context can be given
+     * to the Board.
+     */
     canvas.signal
         .map((cnvs) => cnvs ? { type: 'canvas', data: cnvs } : undefined)
         .connect(updates.signal);
 
+    /**
+     * We set up a custom event handler for window resize events in `utils.js`.
+     * Redrawing the board on every resize event would be wasteful and look
+     * terrible. Instead, we set a timer. When it goes off, if the window is
+     * still resizing it restarts itself; if not, it initiates a redrawing.
+     */
     events.resize
         .recv(function(evt) {
             utils.resizeStart = alm.timer.now();
@@ -107,6 +119,8 @@ var app = App.init()
             }
         });
 
+    /* This fires at least once because it's a mailbox signal, and subsequently
+     * on each redraw. */
     return redraw.signal.map( () =>
         el('div', { 'class': 'container' , 'id': 'board' }, [
             el('canvas', {
