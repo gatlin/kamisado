@@ -40,14 +40,11 @@ function initBoard(runtime) {
         [7,6,5,4,3,2,1,0]
     ];
 
-    let tileSide = runtime.utils.tileSide;
-    let size = runtime.utils.size;
-    let radius = runtime.utils.radius;
-
     function Board(grid, pos, gameId, active, player) {
         this.grid = grid;
         this.pos  = pos;
 
+        // A tile is active if it has a piece on it
         this.active = typeof active !== 'undefined'
             ? active
             : null;
@@ -56,16 +53,21 @@ function initBoard(runtime) {
             ? player
             : 0;
 
+        // If I ever implement networked play, this will be more useful
         this.gameId = typeof gameId !== 'undefined'
             ? gameId
             : 'test-game';
     }
+
+    // Exporting the Board class after definition by convention.
+    runtime.utils.Board = Board;
 
     Board.prototype.setPos = function(pos) {
         this.pos = pos;
         return this;
     };
 
+    // Perform a function on every tile in the grid.
     Board.prototype.map = function(f) {
         let x, y, grid = [];
 
@@ -79,10 +81,23 @@ function initBoard(runtime) {
         return this;
     };
 
+    // Extract the value of the currently focused grid position.
     Board.prototype.extract = function() {
         return this.grid[this.pos.y][this.pos.x];
     };
 
+    /**
+     * Transform a board with a certain grid state and position into a Board
+     * where each tile in the grid is a clone of the original Board, except
+     * with its `pos` property changed to its position in the grid.
+     *
+     * From `duplicate` and `map` we can automatically derive `convolve` which
+     * I use down in `drawCells`. There are many ways to skin this particular
+     * cat but I like the elegance of this technique and it's fast enough.
+     *
+     * FIXME optimization: use laziness and memoization to avoid unnecessary
+     * work here.
+     */
     Board.prototype.duplicate = function() {
         let oldGrid = this.grid;
         let x, y, grid = [];
@@ -97,6 +112,8 @@ function initBoard(runtime) {
         this.grid = grid;
         return this;
     };
+
+    instance(Board,Comonad);
 
     Board.prototype.selectNextPiece = function() {
         var x, y, nextCell;
@@ -152,6 +169,12 @@ function initBoard(runtime) {
                 this.active.x = this.pos.x;
                 this.active.y = this.pos.y;
 
+                // has somebody won?
+                if ((!this.player && (this.pos.y === 7))
+                 || ( this.player && (this.pos.y === 0))) {
+                    console.log('player ' + this.player + ' won!');
+                }
+
                 this.player = (this.player) ? 0 : 1 ;
             }
         }
@@ -168,7 +191,6 @@ function initBoard(runtime) {
           , stepY = Math.abs(dY)/dY
           , y = srcPos.y+stepY, x = srcPos.x+stepX;
         while (y !== dstPos.y && pathIsEmpty) {
-            console.log('( '+x+' , '+y+' )');
             if (this.grid[y][x]) {
                 pathIsEmpty = false;
             }
@@ -190,10 +212,6 @@ function initBoard(runtime) {
             && (this.emptyPath(this.active,this.pos));
     };
 
-    instance(Board,Comonad);
-
-    runtime.utils.Board = Board;
-
     /**
      * Draws a board's current position on the board.
      *
@@ -202,6 +220,10 @@ function initBoard(runtime) {
      */
     let drawCell = runtime.utils.drawCell = function(context) {
         return function(board) {
+        let tileSide = runtime.utils.geom.tileSide;
+        let size = runtime.utils.geom.size;
+        let radius = runtime.utils.geom.radius;
+
         // draw the background color
         var cell = board.extract(); // `pos`
         var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
