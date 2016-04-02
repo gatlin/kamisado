@@ -29,8 +29,8 @@ var app = App.init()
             let rect = evt.target.getBoundingClientRect();
             let xCoord = evt.clientX - rect.left;
             let yCoord = evt.clientY - rect.top;
-            return new Pos(Math.floor(xCoord / utils.tileSide),
-                           Math.floor(yCoord / utils.tileSide));
+            return new Pos(Math.floor(xCoord / utils.geom.tileSide),
+                           Math.floor(yCoord / utils.geom.tileSide));
         })
         .recv((pos) => updates.send({ type: 'position', data: pos }));
 
@@ -98,8 +98,8 @@ var app = App.init()
         el('div', { 'class': 'container' , 'id': 'board' }, [
             el('canvas', {
                 'id': 'board_canvas',
-                'width': utils.boardWidth,
-                'height': utils.boardHeight
+                'width': utils.geom.boardSide,
+                'height': utils.geom.boardSide,
             }).subscribe(canvas),
             el('footer', { 'class':'footer' }, [
                 el('div', { 'class': 'container' }, [

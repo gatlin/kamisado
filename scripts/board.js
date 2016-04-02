@@ -40,9 +40,9 @@ function initBoard(runtime) {
         [7,6,5,4,3,2,1,0]
     ];
 
-    const tileSide = runtime.utils.tileSide;
-    const size = runtime.utils.size;
-    const radius = runtime.utils.radius;
+    const tileSide = runtime.utils.geom.tileSide;
+    const size = runtime.utils.geom.size;
+    const radius = runtime.utils.geom.radius;
 
     function Board(grid, pos, gameId, active, player) {
         this.grid = grid;
@@ -195,7 +195,6 @@ function initBoard(runtime) {
           , stepY = Math.abs(dY)/dY
           , y = srcPos.y+stepY, x = srcPos.x+stepX;
         while (y !== dstPos.y && pathIsEmpty) {
-            console.log('( '+x+' , '+y+' )');
             if (this.grid[y][x]) {
                 pathIsEmpty = false;
             }
