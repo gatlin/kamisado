@@ -40,10 +40,6 @@ function initBoard(runtime) {
         [7,6,5,4,3,2,1,0]
     ];
 
-    const tileSide = runtime.utils.geom.tileSide;
-    const size = runtime.utils.geom.size;
-    const radius = runtime.utils.geom.radius;
-
     function Board(grid, pos, gameId, active, player) {
         this.grid = grid;
         this.pos  = pos;
@@ -224,6 +220,10 @@ function initBoard(runtime) {
      */
     let drawCell = runtime.utils.drawCell = function(context) {
         return function(board) {
+        let tileSide = runtime.utils.geom.tileSide;
+        let size = runtime.utils.geom.size;
+        let radius = runtime.utils.geom.radius;
+
         // draw the background color
         var cell = board.extract(); // `pos`
         var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];

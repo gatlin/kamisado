@@ -62,6 +62,7 @@ function setup(runtime) {
     })();
 
     let geom = runtime.utils.geom = calculateGeometry();
+    runtime.utils.calculateGeometry = calculateGeometry;
 
     runtime = initBoard(runtime);
     let Board = runtime.utils.Board;
@@ -104,6 +105,18 @@ function setup(runtime) {
                              saved.active, saved.player);
         }
     };
+
+    /**
+     * Window resize event
+     */
+    let sig = runtime.events['resize'] = Signal.make();
+    let sig_id = runtime.addInput(sig);
+    runtime.addListener([sig], window, 'resize', function(evt) {
+        runtime.notify(sig_id, evt);
+    });
+
+    runtime.utils.resizing = false;
+    runtime.utils.resizeStart = null;
 
     return save(runtime);
 }
