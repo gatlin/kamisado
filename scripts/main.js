@@ -15,6 +15,7 @@ var app = App.init()
       , Board = utils.Board
       ;
 
+    let redraw = alm.mailbox(null);
     let canvas = alm.mailbox(null);
     let updates = alm.mailbox(null);
 
@@ -29,8 +30,8 @@ var app = App.init()
             let rect = evt.target.getBoundingClientRect();
             let xCoord = evt.clientX - rect.left;
             let yCoord = evt.clientY - rect.top;
-            return new Pos(Math.floor(xCoord / utils.tileSide),
-                           Math.floor(yCoord / utils.tileSide));
+            return new Pos(Math.floor(xCoord / utils.geom.tileSide),
+                           Math.floor(yCoord / utils.geom.tileSide));
         })
         .recv((pos) => updates.send({ type: 'position', data: pos }));
 
@@ -72,6 +73,8 @@ var app = App.init()
                 case 'reset':
                     model.board = alm.utils.eraseGame();
                     break;
+                case 'resize':
+                    break;
                 }
             }
             if (model.context) {
@@ -85,21 +88,31 @@ var app = App.init()
         .map((cnvs) => cnvs ? { type: 'canvas', data: cnvs } : undefined)
         .connect(updates.signal);
 
-    /**
-     * When the `load` event emits for the document, transform it into a signal
-     * of virtual dom trees (which Alm expects).
-     *
-     * A mailbox has been subscribed to canvas render-events. Essentially, when
-     * the canvas is (re-)rendered, it will send the element to the mailbox,
-     * which then connects to the updates signal and gives the board a context
-     * to finally start drawing on.
-     */
-    return events.load.map( () =>
+    events.resize
+        .recv(function(evt) {
+            utils.resizeStart = alm.timer.now();
+            function resizeFinish() {
+                if (alm.timer.now() - utils.resizeStart < 200) {
+                    alm.setTimeout(resizeFinish, 200);
+                } else {
+                    utils.resizing = false;
+                    utils.geom = utils.calculateGeometry();
+                    redraw.send(null);
+                    updates.send({ type: 'resize', data: null });
+                }
+            }
+            if (utils.resizing === false) {
+                utils.resizing = true;
+                alm.setTimeout(resizeFinish,200);
+            }
+        });
+
+    return redraw.signal.map( () =>
         el('div', { 'class': 'container' , 'id': 'board' }, [
             el('canvas', {
                 'id': 'board_canvas',
-                'width': utils.boardWidth,
-                'height': utils.boardHeight
+                'width': utils.geom.boardSide,
+                'height': utils.geom.boardSide,
             }).subscribe(canvas),
             el('footer', { 'class':'footer' }, [
                 el('div', { 'class': 'container' }, [
