@@ -77,7 +77,7 @@ var app = App.init()
                     break;
                 case 'reset':
                     model.board = alm.utils.eraseGame();
-                    return model;
+                    break;
                 }
             }
             if (model.context) {
