@@ -69,9 +69,19 @@ function setup(runtime) {
                 JSON.stringify(state));
     };
 
+    let newGame = runtime.utils.newGame = function() {
+        let grid = [], y;
+        for (y = 1; y < (size-1); y++) {
+            grid[y] = [].repeat(0, 8);
+        }
+        grid[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
+        grid[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
+        return new Board(grid, new Pos(0, 0), 'default');
+    };
+
     runtime.utils.eraseGame = function() {
         window.localStorage.setItem('default',null);
-        location.reload();
+        return newGame();
     };
 
     runtime.utils.loadGame = function() {
@@ -79,13 +89,7 @@ function setup(runtime) {
         let saved = JSON.parse(window.localStorage.getItem('default'));
         console.log(saved);
         if (saved === null) {
-            let grid = [], y;
-            for (y = 1; y < (size-1); y++) {
-                grid[y] = [].repeat(0, 8);
-            }
-            grid[0] = [  1,  2,  3,  4,  5,  6,  7, 8 ];
-            grid[7] = [ 16, 15, 14, 13, 12, 11, 10, 9 ];
-            return new Board(grid, new Pos(0, 0), 'default');
+            return newGame();
         }
         else {
             return new Board(saved.grid, new Pos(0, 0),
