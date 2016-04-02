@@ -9,31 +9,35 @@ Kamisado!
 Two players each have 8 pieces across the board from one another. The object of
 the game is to get one of your pieces to the other side.
 
-Players move by selecting a tile for their currently selected piece to move to.
-The color of the destination tile dictates the color piece that the opponent
-may move.
+On the first turn, the black player selects a piece to move (it is "active").
+The player may move their piece any number of tiles forward, or diagonally
+forward, until they reach the edge of the board or another piece.
 
-Moves are only allowed if they are straight forward or diagonal. Pieces may
-move until they hit another piece, the edge of the board, or the other side.
+The game will not let you make an illegal move.
 
-The game doesn't tell you if you've won (yet).
+The color of the tile you move your piece to dictates your opponent's active
+piece on the next round; you will see it now has a dot in the middle of it.
 
-1. First move
+When a player wins the board resets and starts a new game.
+
+2. Notes / plans
 ---
 
-On the first move no piecese are selected. Black goes first and clicks a piece
-to select it. Gameplay then proceeds like above.
+It's pretty simple right now. Suggestions are always welcome!
 
-2. Credits
----
-
-I didn't invent this game; [these people did][kamisadogame].
-
+  - Allow the board to be oriented the other way
+  - Allow players to start with whichever color they choose
+  - Two-player remote playing
 
 3. Questions / comments / bugs?
 ---
 
 Email me, Gatlin Johnson, at <gatlin@niltag.net> Don't be shy!
+
+4. Credits
+---
+
+I didn't invent this game; [these people did][kamisadogame].
 
 [kamisadogame]: http://www.kamisado.com/
 
