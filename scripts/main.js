@@ -110,6 +110,8 @@ var app = App.init()
                     utils.resizing = false;
                     utils.geom = utils.calculateGeometry();
                     redraw.send(null);
+                    // as long as the value sent to updates has a `type` key
+                    // it's fine
                     updates.send({ type: 'resize', data: null });
                 }
             }
