@@ -62,7 +62,7 @@ var app = App.init()
      * Reset updates tell us to discard the current game state and redraw a
      * fresh board.
      */
-    let board = updates.signal
+    updates.signal
         .reduce(initial_model, function(evt, model) {
             if (evt) {
                 switch (evt.type) {
@@ -71,10 +71,13 @@ var app = App.init()
                     break;
                 case 'position':
                     model.board = model.board.clicked(evt.data);
+                    if (model.board.won !== null) {
+                        model.board = alm.utils.eraseGame();
+                    }
                     break;
                 case 'reset':
                     model.board = alm.utils.eraseGame();
-                    break;
+                    return model;
                 }
             }
             if (model.context) {
