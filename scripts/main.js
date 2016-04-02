@@ -103,7 +103,11 @@ var app = App.init()
                     el('button', { 'id':'reset-btn' }, [
                         "Reset game"
                     ]),
-                    el('p', {}, [ "Made with ",
+                    el('p', {}, [
+                        el('a', {
+                            'href': 'https://github.com/gatlin/kamisado/blob/master/README.md'
+                        }, [ "How to play and more info available here." ]),
+                        " Made with ",
                         el('a', { 'href': 'https://github.com/gatlin/Alm' },
                             [ "Alm" ] ),
                         ". ",
