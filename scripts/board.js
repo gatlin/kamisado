@@ -57,6 +57,9 @@ function initBoard(runtime) {
         this.gameId = typeof gameId !== 'undefined'
             ? gameId
             : 'test-game';
+
+        // either a player number or null
+        this.won = null;
     }
 
     // Exporting the Board class after definition by convention.
@@ -133,7 +136,7 @@ function initBoard(runtime) {
 
     // Click event handler.
     Board.prototype.clicked = function(clickPos) {
-        var cell = this.setPos(clickPos).extract();
+        let cell = this.setPos(clickPos).extract();
 
         if (this.active === null) {
             this.active = new Pos(-1, -1);
@@ -172,7 +175,7 @@ function initBoard(runtime) {
                 // has somebody won?
                 if ((!this.player && (this.pos.y === 7))
                  || ( this.player && (this.pos.y === 0))) {
-                    console.log('player ' + this.player + ' won!');
+                    this.won = this.pos.y ? 1 : 0;
                 }
 
                 this.player = (this.player) ? 0 : 1 ;
@@ -184,7 +187,7 @@ function initBoard(runtime) {
     };
 
     Board.prototype.emptyPath = function(srcPos, dstPos) {
-        var pathIsEmpty = true
+        let pathIsEmpty = true
           , dX = dstPos.x - srcPos.x
           , dY = dstPos.y - srcPos.y
           , stepX = (dX ? Math.abs(dX)/dX : 0)
