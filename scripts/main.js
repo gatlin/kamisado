@@ -15,6 +15,7 @@ var app = App.init()
       , Board = utils.Board
       ;
 
+    let canvas = alm.mailbox(null);
     let updates = alm.mailbox(null);
 
     /**
@@ -31,7 +32,7 @@ var app = App.init()
             return new Pos(Math.floor(xCoord / utils.tileSide),
                            Math.floor(yCoord / utils.tileSide));
         })
-        .recv((evt) => updates.send(evt));
+        .recv((pos) => updates.send({ type: 'position', data: pos }));
 
     /**
      * When the reset button is clicked, erase the game (which will trigger a
@@ -48,46 +49,47 @@ var app = App.init()
     };
 
     /**
-     * Listen for update events (which for now are positions). Because
-     * mailboxes always fire at least once with their first value, we know the
-     * first time this is run that `pos` will be null. If that's the case, we
-     * don't register a click with the board.
+     * Listen for update events. Two flavors: position updates, and canvas
+     * updates.
      *
-     * If the canvas drawing context hasn't been initialized yet, we do so here
-     * as well. This happens here because `updates` will only emit an event
-     * after the browser has rendered the view so we can be certain that the
-     * initial canvas has been rendered in the DOM.
+     * Position updates are when a player selects a tile to move their piece
+     * to; the payload is, unsurprisingly, the coordinate.
      *
-     * Finally we update the board's state, give it the context so it can
-     * redraw, and return the updated model to save it.
+     * Canvas updates occur when the dom re-renders the canvas (hopefully
+     * infrequently). When this happens the canvas drawing context is updated
+     * in the model.
      */
-    updates.signal
-        .reduce(initial_model, function(pos, model) {
-            // If we haven't gotten a canvas context yet, let's do so now
-            if (!model.context) {
-                model.context = alm.byId('board_canvas').getContext('2d');
+    let board = updates.signal
+        .reduce(initial_model, function(evt, model) {
+            if (evt) {
+                switch (evt.type) {
+                case 'canvas':
+                    model.context = evt.data.getContext('2d');
+                    break;
+                case 'position':
+                    model.board = model.board.clicked(evt.data);
+                    break;
+                }
             }
-            if (pos) {
-                model.board = model.board.clicked(pos);
+            if (model.context) {
+                model.board = model.board.drawCells(model.context);
             }
-            model.board = model.board.drawCells(model.context);
             return model;
         })
         .recv((model) => utils.saveGame(model.board));
 
+    canvas.signal
+        .map((cnvs) => cnvs ? { type: 'canvas', data: cnvs } : undefined)
+        .connect(updates.signal);
+
     /**
-     * The `main` function in an Alm application must return a signal of
-     * Virtual DOM objects. The idea is every time this signal emits, Alm
-     * redraws the page efficiently.
+     * When the `load` event emits for the document, transform it into a signal
+     * of virtual dom trees (which Alm expects).
      *
-     * Problem is, we want to give the Board a canvas context to draw with, so
-     * the canvas has to have been rendered first. Once this happens, we can
-     * grab the context, give it to the board, and go on our merry way.
-     *
-     * The `load` event will fire before any of the mailboxes do, so this
-     * ensures the DOM will be rendered at that a canvas will exist by the time
-     * we grab the canvas context manually above. It's a hack; issue #11 on
-     * alm's github page will address this.
+     * A mailbox has been subscribed to canvas render-events. Essentially, when
+     * the canvas is (re-)rendered, it will send the element to the mailbox,
+     * which then connects to the updates signal and gives the board a context
+     * to finally start drawing on.
      */
     return events.load.map( () =>
         el('div', { 'class': 'container' , 'id': 'board' }, [
@@ -95,7 +97,7 @@ var app = App.init()
                 'id': 'board_canvas',
                 'width': utils.boardWidth,
                 'height': utils.boardHeight
-            }),
+            }).subscribe(canvas),
             el('footer', { 'class':'footer' }, [
                 el('div', { 'class': 'container' }, [
                     el('button', { 'id':'reset-btn' }, [
