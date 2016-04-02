@@ -50,8 +50,7 @@ var app = App.init()
     };
 
     /**
-     * Listen for update events. Two flavors: position updates, and canvas
-     * updates.
+     * Listen for update events.
      *
      * Position updates are when a player selects a tile to move their piece
      * to; the payload is, unsurprisingly, the coordinate.
@@ -59,6 +58,9 @@ var app = App.init()
      * Canvas updates occur when the dom re-renders the canvas (hopefully
      * infrequently). When this happens the canvas drawing context is updated
      * in the model.
+     *
+     * Reset updates tell us to discard the current game state and redraw a
+     * fresh board.
      */
     let board = updates.signal
         .reduce(initial_model, function(evt, model) {
@@ -72,8 +74,6 @@ var app = App.init()
                     break;
                 case 'reset':
                     model.board = alm.utils.eraseGame();
-                    break;
-                case 'resize':
                     break;
                 }
             }
