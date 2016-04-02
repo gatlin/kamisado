@@ -40,7 +40,7 @@ var app = App.init()
      */
     events.mouse.click
         .filter((evt) => evt.target.id === 'reset-btn')
-        .recv((evt) => utils.eraseGame());
+        .recv((evt) => updates.send({ type: 'reset', data: null }));
 
     // The initial game state
     let initial_model = {
@@ -68,6 +68,9 @@ var app = App.init()
                     break;
                 case 'position':
                     model.board = model.board.clicked(evt.data);
+                    break;
+                case 'reset':
+                    model.board = alm.utils.eraseGame();
                     break;
                 }
             }
