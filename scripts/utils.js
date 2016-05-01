@@ -46,9 +46,9 @@ function setup(runtime) {
         this.y = y;
     }
 
-    runtime.utils.Pos = Pos;
+    runtime.scope.Pos = Pos;
 
-    let guid = runtime.utils.guid = (function() {
+    let guid = runtime.scope.guid = (function() {
         function s4() {
             return Math.floor((1 + Math.random()) * 0x10000)
                 .toString(16)
@@ -61,13 +61,13 @@ function setup(runtime) {
         };
     })();
 
-    let geom = runtime.utils.geom = calculateGeometry();
-    runtime.utils.calculateGeometry = calculateGeometry;
+    let geom = runtime.scope.geom = calculateGeometry();
+    runtime.scope.calculateGeometry = calculateGeometry;
 
     runtime = initBoard(runtime);
-    let Board = runtime.utils.Board;
+    let Board = runtime.scope.Board;
 
-    runtime.utils.saveGame = function(board) {
+    runtime.scope.saveGame = function(board) {
         let state = {
             grid     : board.grid,
             player   : board.player,
@@ -78,7 +78,7 @@ function setup(runtime) {
                 JSON.stringify(state));
     };
 
-    let newGame = runtime.utils.newGame = function() {
+    let newGame = runtime.scope.newGame = function() {
         let grid = [], y;
         for (y = 1; y < (geom.size-1); y++) {
             grid[y] = [].repeat(0, 8);
@@ -88,12 +88,12 @@ function setup(runtime) {
         return new Board(grid, new Pos(0, 0), 'default');
     };
 
-    runtime.utils.eraseGame = function() {
+    runtime.scope.eraseGame = function() {
         window.localStorage.setItem('default',null);
         return newGame();
     };
 
-    runtime.utils.loadGame = function() {
+    runtime.scope.loadGame = function() {
 
         let saved = JSON.parse(window.localStorage.getItem('default'));
         if (saved === null) {
@@ -115,8 +115,8 @@ function setup(runtime) {
         runtime.notify(sig_id, evt);
     });
 
-    runtime.utils.resizing = false;
-    runtime.utils.resizeStart = null;
+    runtime.scope.resizing = false;
+    runtime.scope.resizeStart = null;
 
     return save(runtime);
 }
