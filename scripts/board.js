@@ -14,7 +14,7 @@
 
 function initBoard(runtime) {
 
-    let Pos = runtime.utils.Pos;
+    let Pos = runtime.scope.Pos;
 
     const colors = [
         '#F5B437', // 0:  orange
@@ -63,7 +63,7 @@ function initBoard(runtime) {
     }
 
     // Exporting the Board class after definition by convention.
-    runtime.utils.Board = Board;
+    runtime.scope.Board = Board;
 
     Board.prototype.setPos = function(pos) {
         this.pos = pos;
@@ -221,11 +221,11 @@ function initBoard(runtime) {
      * Since Board is a comonad, drawing all cells is done by convolving this
      * function over every position.
      */
-    let drawCell = runtime.utils.drawCell = function(context) {
+    let drawCell = runtime.scope.drawCell = function(context) {
         return function(board) {
-        let tileSide = runtime.utils.geom.tileSide;
-        let size = runtime.utils.geom.size;
-        let radius = runtime.utils.geom.radius;
+        let tileSide = runtime.scope.geom.tileSide;
+        let size = runtime.scope.geom.size;
+        let radius = runtime.scope.geom.radius;
 
         // draw the background color
         var cell = board.extract(); // `pos`

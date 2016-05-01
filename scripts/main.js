@@ -3,16 +3,16 @@
 
 var app = App.init()
 
-/* `setup` is found in `scripts/utils.js`. */
+/* `setup` is found in `scripts/scope.js`. */
 .runtime(setup)
 
 /* High level application logic */
 .main(function(alm) {
     let el = alm.el
       , events = alm.events
-      , utils = alm.utils
-      , Pos = utils.Pos
-      , Board = utils.Board
+      , scope = alm.scope
+      , Pos = scope.Pos
+      , Board = scope.Board
       ;
 
     let redraw = alm.mailbox(null);
@@ -30,8 +30,8 @@ var app = App.init()
             let rect = evt.target.getBoundingClientRect();
             let xCoord = evt.clientX - rect.left;
             let yCoord = evt.clientY - rect.top;
-            return new Pos(Math.floor(xCoord / utils.geom.tileSide),
-                           Math.floor(yCoord / utils.geom.tileSide));
+            return new Pos(Math.floor(xCoord / scope.geom.tileSide),
+                           Math.floor(yCoord / scope.geom.tileSide));
         })
         .recv((pos) => updates.send({ type: 'position', data: pos }));
 
@@ -45,7 +45,7 @@ var app = App.init()
 
     // The initial game state
     let initial_model = {
-        board: utils.loadGame(), // board state
+        board: scope.loadGame(), // board state
         context: null            // display canvas
     };
 
@@ -72,11 +72,11 @@ var app = App.init()
                 case 'position':
                     model.board = model.board.clicked(evt.data);
                     if (model.board.won !== null) {
-                        model.board = alm.utils.eraseGame();
+                        model.board = alm.scope.eraseGame();
                     }
                     break;
                 case 'reset':
-                    model.board = alm.utils.eraseGame();
+                    model.board = alm.scope.eraseGame();
                     break;
                 }
             }
@@ -85,7 +85,7 @@ var app = App.init()
             }
             return model;
         })
-        .recv((model) => utils.saveGame(model.board));
+        .recv((model) => scope.saveGame(model.board));
 
     /**
      * A mailbox called `canvas` is subscribed below to the HTML canvas element
@@ -98,28 +98,28 @@ var app = App.init()
         .connect(updates.signal);
 
     /**
-     * We set up a custom event handler for window resize events in `utils.js`.
+     * We set up a custom event handler for window resize events in `scope.js`.
      * Redrawing the board on every resize event would be wasteful and look
      * terrible. Instead, we set a timer. When it goes off, if the window is
      * still resizing it restarts itself; if not, it initiates a redrawing.
      */
     events.resize
         .recv(function(evt) {
-            utils.resizeStart = alm.timer.now();
+            scope.resizeStart = alm.timer.now();
             function resizeFinish() {
-                if (alm.timer.now() - utils.resizeStart < 200) {
+                if (alm.timer.now() - scope.resizeStart < 200) {
                     alm.setTimeout(resizeFinish, 200);
                 } else {
-                    utils.resizing = false;
-                    utils.geom = utils.calculateGeometry();
+                    scope.resizing = false;
+                    scope.geom = scope.calculateGeometry();
                     redraw.send(null);
                     // as long as the value sent to updates has a `type` key
                     // it's fine
                     updates.send({ type: 'resize', data: null });
                 }
             }
-            if (utils.resizing === false) {
-                utils.resizing = true;
+            if (scope.resizing === false) {
+                scope.resizing = true;
                 alm.setTimeout(resizeFinish,200);
             }
         });
@@ -130,8 +130,8 @@ var app = App.init()
         el('div', { 'class': 'container' , 'id': 'board' }, [
             el('canvas', {
                 'id': 'board_canvas',
-                'width': utils.geom.boardSide,
-                'height': utils.geom.boardSide,
+                'width': scope.geom.boardSide,
+                'height': scope.geom.boardSide,
             }).subscribe(canvas),
             el('footer', { 'class':'footer' }, [
                 el('div', { 'class': 'container' }, [
