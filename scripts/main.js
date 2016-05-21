@@ -3,7 +3,7 @@
 
 var app = App.init()
 
-/* `setup` is found in `scripts/utils.js`. */
+/* `setup` is found in `scripts/scope.js`. */
 .runtime(setup)
 
 /* High level application logic */
@@ -98,7 +98,7 @@ var app = App.init()
         .connect(updates.signal);
 
     /**
-     * We set up a custom event handler for window resize events in `utils.js`.
+     * We set up a custom event handler for window resize events in `scope.js`.
      * Redrawing the board on every resize event would be wasteful and look
      * terrible. Instead, we set a timer. When it goes off, if the window is
      * still resizing it restarts itself; if not, it initiates a redrawing.
