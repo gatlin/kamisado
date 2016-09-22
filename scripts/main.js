@@ -4,7 +4,7 @@
 var app = App.init()
 
 /* `setup` is found in `scripts/scope.js`. */
-.runtime(setup)
+.setup(setup)
 
 /* High level application logic */
 .main(function(alm) {
@@ -15,8 +15,14 @@ var app = App.init()
       , Board = scope.Board
       ;
 
+    // (re)draws the view
     let redraw = alm.mailbox(null);
+
+    // if the canvas is destroyed and recreated this signal will receive the new
+    // element and pass it along to the board
     let canvas = alm.mailbox(null);
+
+    // any updates which need to be made to the game state go here
     let updates = alm.mailbox(null);
 
     /**
