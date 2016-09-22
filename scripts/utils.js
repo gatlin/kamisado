@@ -4,11 +4,8 @@
 /**
  * Utils module
  *
- * Utilities which cluttered up the application or game logic.
- *
- * It computes window measurements and useful game constants; exposes functions
- * to save, load, and erase a game using localStorage; and initializes the
- * Board module.
+ * Utilities which are not strictly part of the game logic nor part of the event
+ * routing logic.
  *
  * Exports:
  *
@@ -46,9 +43,9 @@ function setup(runtime) {
         this.y = y;
     }
 
-    runtime.scope.Pos = Pos;
-
-    let guid = runtime.scope.guid = (function() {
+    // a simple guid that's more sophisticated than monotonically increasing
+    // integers
+    let guid = (function() {
         function s4() {
             return Math.floor((1 + Math.random()) * 0x10000)
                 .toString(16)
@@ -61,13 +58,16 @@ function setup(runtime) {
         };
     })();
 
-    let geom = runtime.scope.geom = calculateGeometry();
-    runtime.scope.calculateGeometry = calculateGeometry;
 
-    runtime = initBoard(runtime);
-    let Board = runtime.scope.Board;
+    const geom = calculateGeometry();
 
-    runtime.scope.saveGame = function(board) {
+    const board = initBoard({
+        Pos: Pos,
+        geom: geom
+    });
+    let Board = board.Board;
+
+    let saveGame = function(board) {
         let state = {
             grid     : board.grid,
             player   : board.player,
@@ -78,7 +78,7 @@ function setup(runtime) {
                 JSON.stringify(state));
     };
 
-    let newGame = runtime.scope.newGame = function() {
+    let newGame = function() {
         let grid = [], y;
         for (y = 1; y < (geom.size-1); y++) {
             grid[y] = [].repeat(0, 8);
@@ -88,12 +88,12 @@ function setup(runtime) {
         return new Board(grid, new Pos(0, 0), 'default');
     };
 
-    runtime.scope.eraseGame = function() {
+    let eraseGame = function() {
         window.localStorage.setItem('default',null);
         return newGame();
     };
 
-    runtime.scope.loadGame = function() {
+    let loadGame = function() {
 
         let saved = JSON.parse(window.localStorage.getItem('default'));
         if (saved === null) {
@@ -115,10 +115,19 @@ function setup(runtime) {
         runtime.notify(sig_id, evt);
     });
 
+    runtime.scope.Board = Board;
+    runtime.scope.Pos = Pos;
+    runtime.scope.geom = geom;
+    runtime.scope.calculateGeometry = calculateGeometry;
+    runtime.scope.newGame = newGame;
+    runtime.scope.saveGame = saveGame;
+    runtime.scope.eraseGame = eraseGame;
+    runtime.scope.loadGame = loadGame;
     runtime.scope.resizing = false;
     runtime.scope.resizeStart = null;
+    runtime.scope.guid = guid;
 
-    return save(runtime);
+    return runtime;
 }
 exports.setup = setup;
 })(this);
