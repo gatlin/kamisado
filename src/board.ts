@@ -44,7 +44,6 @@ export type Geom = {
 export class Board<A> {
     private grid: Array<A>;
     public pos: Pos;
-    public size: number;
     public player: number;
     private gameId: string;
     public active: Pos | null;

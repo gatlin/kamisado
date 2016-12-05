@@ -20,6 +20,8 @@ type GameState = {
     board: Board<number>;
     geom: Geom;
     context: any; // eh ...
+    resizeStart: number;
+    resizing: boolean;
 };
 
 function new_game(geom: Geom): Board<number> {
@@ -40,15 +42,64 @@ function new_state(): GameState {
     return {
         board: new_game(geom),
         geom: geom,
-        context: null
+        context: null,
+        resizing: false,
+        resizeStart: -1
     };
+}
+
+function update(action, state) {
+    if (action['type'] === Actions.ResizeStart) {
+        const evt = action.data.evt;
+        state.resizeStart = Date.now();
+        const resizeFinish = () => {
+            if (Date.now() - state.resizeStart < 200) {
+                window.setTimeout(resizeFinish, 200);
+            } else {
+                state.resizing = false;
+                state.geom = calculate_geometry();
+                action.data.actions.send({
+                    'type': Actions.ResizeStop
+                });
+            }
+        }
+
+        if (state.resizing === false) {
+            state.resizing = true;
+            window.setTimeout(resizeFinish, 200);
+        }
+    }
+
+    return state;
+}
+
+function render(state) {
+    return el('h1', {}, ['cool']);
+}
+
+enum Actions {
+    ResizeStart,
+    ResizeStop
+};
+
+function main(scope) {
+    scope.events.resize
+        .recv(evt => {
+            scope.actions.send({
+                'type': Actions.ResizeStart,
+                data: {
+                    evt: evt,
+                    actions: scope.actions
+                }
+            });
+        });
 }
 
 const app = new App<GameState>({
     state: new_state(),
-    update: (action, state) => state,
-    main: scope => { },
-    render: state => el('h1', {}, ['cool']),
+    update: update,
+    main: main,
+    render: render,
     eventRoot: 'app',
     domRoot: 'app',
     extraEvents: ['resize']
