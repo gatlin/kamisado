@@ -1,47 +1,70 @@
-Kamisado!
-===
+# alm-template
 
-2016, Gatlin Johnson.
+This is a project template for quickly starting [Alm][alm] apps and the
+associated project infrastructure.
 
-0. How to play
----
+Note: this template assumes that you'll be writing TypeScript files in `src`
+and that at least one of them will be called `app.ts`.
 
-Two players each have 8 pieces across the board from one another. The object of
-the game is to get one of your pieces to the other side.
+# Usage
 
-Black player goes first. On the first move the player must select a piece to be
-*active*. Only active pieces may be moved. Active pieces have dots in the
-middle of them.
+It is assumed that you have gulp installed.
 
-On each turn a player must select a tile for their active piece to move to. A
-piece may only go directly forward or diagonally forward. A piece may be moved
-any distance but it may not land on or skip over another piece.
+After you have cloned this repository run the following in your command line:
 
-The game will not let you make an illegal move.
+    $> cp -r alm-template mynewapp
+    $> cd mynewapp
+    $> sh init.sh
+    $> npm install
 
-The color of the tile you move your piece to becomes the color of your
-opponent's active piece.
+When you run `sh init.sh` you'll be prompted for a few questions to start your
+`package.json` file. `init.sh` and `package.json.sample` will be added to the
+included `.gitignore` file for you as well so if you forget to delete them
+no worries.
 
-When a player wins the board resets and starts a new game.
+You'll have a few gulp tasks created for you as well:
 
-2. Notes / plans
----
+- `make` - creates a bundle file in `static/js` which the default `index.html`
+already refers to.
 
-It's pretty simple right now. Suggestions are always welcome!
+- `dist` - takes the file created by `make`, uglifies it, and puts it in the
+`dist` directory. It also concatenates all JavaScript files in `static/vendor`
+and creates a `dist/vendor.js` file.
 
-  - Allow the board to be oriented the other way
-  - Allow players to start with whichever color they choose
-  - Two-player remote playing
+- `clean` - deletes build artifacts.
 
-3. Questions / comments / bugs?
----
+- `serve` - serves the top-level directory at `localhost:3000`.
 
-Email me, Gatlin Johnson, at <gatlin@niltag.net> Don't be shy!
+# Project structure
 
-4. Credits
----
+    alm-template/
+    |
+    +- .gitignore           # prepopulated with useful entries
+    |
+    +- dist/                # where uglified scripts go
+    |
+    +- gulpfile.js
+    |
+    +- index.html           # your project's index.html page
+    |
+    +- static/              # where static assets go during development
+    |  |
+    |  +- css/
+    |  |  |
+    |  |  +- main.css       # edit your CSS however you like
+    |  |  |
+    |  |  +- reset.css
+    |  |
+    |  +- js/               # your code bundle will go here
+    |  |
+    |  +- vendor/           # vendor stuff will go here
+    |
+    +- tmp/                 # used while making stuff
 
-I didn't invent this game; [these people did][kamisadogame].
+# Todo
 
-[kamisadogame]: http://www.kamisado.com/
+- Handling CSS tasks as well
+- Some way for `gulp dist` to rewrite the important parts of `index.html` and
+produce a standalone static site in `dist`.
 
+[alm]: http://niltag.net/Alm

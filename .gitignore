@@ -45,3 +45,5 @@ node_modules
 # Debug log from npm
 npm-debug.log
 
+init.sh
+package.json.sample
