@@ -7,9 +7,9 @@ const canvasMBox = new Mailbox<HTMLElement>(null);
 
 enum Actions {
     ResizeStart,
-    ResizeStop,
     CanvasUpdate,
-    Click
+    Click,
+    Reset
 };
 
 function calculate_geometry(): Geom {
@@ -48,10 +48,37 @@ function new_game(): Board<number> {
     return new Board(grid, new Pos(0, 0), 'default');
 };
 
+function erase_game(): Board<number> {
+    window.localStorage.setItem('default', null);
+    return new_game();
+}
+
+function load_game(): Board<number> {
+    const saved = JSON.parse(window.localStorage.getItem('default'));
+    if (saved === null) {
+        return new_game();
+    } else {
+        return new Board<number>(saved.grid, new Pos(0, 0), saved.gameId,
+            saved.active, saved.player);
+    }
+}
+
+function save_game(board) {
+    const state = {
+        grid: board.getGrid(),
+        player: board.player,
+        gameId: board.gameId,
+        active: board.active
+    }
+
+    window.localStorage.setItem('default',
+        JSON.stringify(state));
+}
+
 function new_state(): GameState {
     const geom: Geom = calculate_geometry();
     return {
-        board: new_game(),
+        board: load_game(),
         geom: geom,
         context: null,
         resizing: false,
@@ -68,21 +95,15 @@ function update(action, state) {
                 window.setTimeout(resizeFinish, 200);
             } else {
                 state.resizing = false;
-                state.geom = calculate_geometry();
-                action.data.actions.send({
-                    'type': Actions.ResizeStop
-                });
+                state.board.drawCells(state.context, state.geom);
             }
-        }
+        };
 
         if (state.resizing === false) {
             state.resizing = true;
+            state.geom = calculate_geometry();
             window.setTimeout(resizeFinish, 200);
         }
-    }
-
-    if (action['type'] === Actions.ResizeStop) {
-        return state;
     }
 
     if (action['type'] === Actions.CanvasUpdate && action.data !== null) {
@@ -103,8 +124,14 @@ function update(action, state) {
 
         state.board = boardClicked(state.board, pos);
         if (state.board.won !== null) {
-            // erase game
+            state.board = erase_game();
         }
+        save_game(state.board);
+    }
+
+    if (action['type'] === Actions.Reset) {
+        state.board = erase_game();
+        save_game(state.board);
     }
 
     if (state.context) {
@@ -142,6 +169,10 @@ function main(scope) {
                 'data': cnvs
             });
         });
+
+    scope.events.click
+        .filter(evt => evt.getId() === 'reset-btn')
+        .recv(evt => { scope.actions.send({ 'type': Actions.Reset }); });
 }
 
 function render(state) {

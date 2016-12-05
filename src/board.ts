@@ -47,7 +47,7 @@ export class Board<A> {
     public pos: Pos;
     public active: Pos;
     public player: number;
-    private gameId: string;
+    public gameId: string;
 
     public won: number;
 
@@ -64,6 +64,10 @@ export class Board<A> {
         this.player = player;
         this.won = null;
         this.active = active;
+    }
+
+    public getGrid() {
+        return this.grid;
     }
 
     public setPos(pos: Pos): Board<A> {
@@ -275,6 +279,8 @@ export function boardClicked(board: Board<number>, clickPos: Pos): Board<number>
             if ((!board.player && (board.pos.y === 7))
                 || (board.player && (board.pos.y === 0))) {
                 board.won = board.pos.y ? 1 : 0;
+                console.log('WINNER');
+                return board;
             }
 
             board.player = (board.player) ? 0 : 1;
