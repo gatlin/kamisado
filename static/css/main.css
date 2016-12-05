@@ -1,0 +1,69 @@
+html {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+body {
+    background: #FAFAFA;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    /*  margin-top: 40px; */
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    cursor: default;
+    -webkit-touch-callout: none;
+    -ms-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -ms-touch-action: none;
+    touch-action: none;
+
+    max-height: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+
+#board_canvas {
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+    border: 1px solid #efefef;
+}
+.footer {
+    /* Set the fixed height of the footer here */
+    padding-top: 20px;
+    text-align: center;
+}
+
+button#reset-btn {
+    margin: 0 auto;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+body {
+    /* Margin bottom by footer height */
+}
+
+body > .container {
+    padding: 10px 15px 0;
+}
+.container .text-muted {
+    margin: 20px 0;
+}
+
+.footer > .container {
+    padding-right: 15px;
+    padding-left: 15px;
+}

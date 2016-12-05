@@ -44,32 +44,161 @@
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, alm_1) {
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports, __webpack_require__(1), __webpack_require__(4)], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports, alm_1, board_1) {
 	    "use strict";
+	    var canvasMBox = new alm_1.Mailbox(null);
+	    var Actions;
+	    (function (Actions) {
+	        Actions[Actions["ResizeStart"] = 0] = "ResizeStart";
+	        Actions[Actions["ResizeStop"] = 1] = "ResizeStop";
+	        Actions[Actions["CanvasUpdate"] = 2] = "CanvasUpdate";
+	        Actions[Actions["Click"] = 3] = "Click";
+	    })(Actions || (Actions = {}));
+	    ;
+	    function calculate_geometry() {
+	        var size = 8;
+	        var boardSide = 0.9 * (Math.min(window.innerWidth, window.innerHeight - 50));
+	        var tileSide = (boardSide / size);
+	        var radius = (tileSide * 0.9) / 2;
+	        return {
+	            size: size,
+	            boardSide: boardSide,
+	            tileSide: tileSide,
+	            radius: radius
+	        };
+	    }
+	    function new_game() {
+	        var grid = [
+	            1, 2, 3, 4, 5, 6, 7, 8,
+	            0, 0, 0, 0, 0, 0, 0, 0,
+	            0, 0, 0, 0, 0, 0, 0, 0,
+	            0, 0, 0, 0, 0, 0, 0, 0,
+	            0, 0, 0, 0, 0, 0, 0, 0,
+	            0, 0, 0, 0, 0, 0, 0, 0,
+	            0, 0, 0, 0, 0, 0, 0, 0,
+	            16, 15, 14, 13, 12, 11, 10, 9];
+	        return new board_1.Board(grid, new board_1.Pos(0, 0), 'default');
+	    }
+	    ;
+	    function new_state() {
+	        var geom = calculate_geometry();
+	        return {
+	            board: new_game(),
+	            geom: geom,
+	            context: null,
+	            resizing: false,
+	            resizeStart: -1
+	        };
+	    }
+	    function update(action, state) {
+	        if (action['type'] === Actions.ResizeStart) {
+	            var evt = action.data.evt;
+	            state.resizeStart = Date.now();
+	            var resizeFinish_1 = function () {
+	                if (Date.now() - state.resizeStart < 200) {
+	                    window.setTimeout(resizeFinish_1, 200);
+	                }
+	                else {
+	                    state.resizing = false;
+	                    state.geom = calculate_geometry();
+	                    action.data.actions.send({
+	                        'type': Actions.ResizeStop
+	                    });
+	                }
+	            };
+	            if (state.resizing === false) {
+	                state.resizing = true;
+	                window.setTimeout(resizeFinish_1, 200);
+	            }
+	        }
+	        if (action['type'] === Actions.ResizeStop) {
+	            return state;
+	        }
+	        if (action['type'] === Actions.CanvasUpdate && action.data !== null) {
+	            var canvasEl = action.data;
+	            state.context = canvasEl.getContext('2d');
+	        }
+	        if (action['type'] === Actions.Click) {
+	            var raw = action.data;
+	            var rect = raw
+	                .target
+	                .getBoundingClientRect();
+	            var xCoord = raw.clientX - rect.left;
+	            var yCoord = raw.clientY - rect.top;
+	            var pos = new board_1.Pos(Math.floor(xCoord / state.geom.tileSide), Math.floor(yCoord / state.geom.tileSide));
+	            state.board = board_1.boardClicked(state.board, pos);
+	            if (state.board.won !== null) {
+	            }
+	        }
+	        if (state.context) {
+	            state.board.drawCells(state.context, state.geom);
+	        }
+	        return state;
+	    }
+	    function main(scope) {
+	        scope.ports.resize_event
+	            .recv(function (evt) {
+	            scope.actions.send({
+	                'type': Actions.ResizeStart,
+	                data: {
+	                    evt: evt,
+	                    updates: scope.actions
+	                }
+	            });
+	        });
+	        scope.events.click
+	            .filter(function (evt) { return evt.getId() === 'board_canvas'; })
+	            .recv(function (evt) {
+	            scope.actions.send({
+	                'type': Actions.Click,
+	                'data': evt.getRaw()
+	            });
+	        });
+	        canvasMBox
+	            .recv(function (cnvs) {
+	            scope.actions.send({
+	                'type': Actions.CanvasUpdate,
+	                'data': cnvs
+	            });
+	        });
+	    }
+	    function render(state) {
+	        return alm_1.el('div', { 'class': 'container', 'id': 'board' }, [
+	            alm_1.el('canvas', {
+	                'id': 'board_canvas',
+	                'width': state.geom.boardSide,
+	                'height': state.geom.boardSide
+	            }, []).subscribe(canvasMBox),
+	            alm_1.el('footer', { 'class': 'footer' }, [
+	                alm_1.el('div', { 'class': 'container' }, [
+	                    alm_1.el('button', { 'id': 'reset-btn' }, [
+	                        "Reset game"
+	                    ]),
+	                    alm_1.el('p', {}, [
+	                        alm_1.el('a', {
+	                            'href': 'https://github.com/gatlin/kamisado/blob/master/README.md'
+	                        }, ["How to play and more info available here."]),
+	                        " Made with ",
+	                        alm_1.el('a', { 'href': 'https://github.com/gatlin/Alm' }, ["Alm"]),
+	                        ". ",
+	                        alm_1.el('a', { 'href': 'https://github.com/gatlin/Kamisado' }, ["Source code on GitHub."])
+	                    ])
+	                ])
+	            ])
+	        ]);
+	    }
 	    var app = new alm_1.App({
-	        state: 0,
-	        update: function (action, n) { return n + (action ? 1 : -1); },
-	        main: function (scope) {
-	            scope.events.click
-	                .filter(function (evt) { return evt.getId() === 'incr-btn'; })
-	                .recv(function (evt) { return scope.actions.send(true); });
-	            scope.events.click
-	                .filter(function (evt) { return evt.getId() === 'decr-btn'; })
-	                .recv(function (evt) { return scope.actions.send(false); });
-	        },
-	        render: function (n) {
-	            return alm_1.el('div', { 'id': 'main' }, [
-	                alm_1.el('h1', { 'key': 'hello' }, ['Hello, World!']),
-	                alm_1.el('span', { 'id': 'buttons' }, [
-	                    alm_1.el('button', { 'id': 'incr-btn' }, ['+']),
-	                    alm_1.el('button', { 'id': 'decr-btn' }, ['-'])
-	                ]),
-	                alm_1.el('p', { 'key': 'the-number' }, [n.toString()])
-	            ]);
-	        },
+	        state: new_state(),
+	        update: update,
+	        main: main,
+	        render: render,
 	        eventRoot: 'app',
-	        domRoot: 'app'
+	        domRoot: 'app',
+	        ports: ['resize_event']
 	    }).start();
+	    window.addEventListener('resize', function (evt) {
+	        app.ports.resize_event.send(evt);
+	    }, false);
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
@@ -746,6 +875,227 @@
 	        });
 	    }
 	    exports.render = render;
+	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;!(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__, exports], __WEBPACK_AMD_DEFINE_RESULT__ = function (require, exports) {
+	    "use strict";
+	    var colors = [
+	        '#F5B437',
+	        '#3340AE',
+	        '#1E8AD1',
+	        '#F8D6C4',
+	        '#F6E500',
+	        '#DC442F',
+	        '#BAD360',
+	        '#6B451E',
+	        '#080D07',
+	        '#F4FFF4' // 9:  player 1
+	    ];
+	    var tileColorPattern = [
+	        [0, 1, 2, 3, 4, 5, 6, 7],
+	        [5, 0, 3, 6, 1, 4, 7, 2],
+	        [6, 3, 0, 5, 2, 7, 4, 1],
+	        [3, 2, 1, 0, 7, 6, 5, 4],
+	        [4, 5, 6, 7, 0, 1, 2, 3],
+	        [1, 4, 7, 2, 5, 0, 3, 6],
+	        [2, 7, 4, 1, 6, 3, 0, 5],
+	        [7, 6, 5, 4, 3, 2, 1, 0]
+	    ];
+	    var Pos = (function () {
+	        function Pos(x, y) {
+	            this.x = x;
+	            this.y = y;
+	        }
+	        return Pos;
+	    }());
+	    exports.Pos = Pos;
+	    var Board = (function () {
+	        function Board(grid, pos, gameId, active, player) {
+	            if (active === void 0) { active = null; }
+	            if (player === void 0) { player = 0; }
+	            this.grid = grid;
+	            this.pos = pos;
+	            this.gameId = gameId;
+	            this.player = player;
+	            this.won = null;
+	            this.active = active;
+	        }
+	        Board.prototype.setPos = function (pos) {
+	            this.pos = pos;
+	            return this;
+	        };
+	        Board.prototype.extract = function () {
+	            return this.grid[this.pos.y * 8 + this.pos.x];
+	        };
+	        Board.prototype.duplicate = function () {
+	            var oldGrid = this.grid;
+	            var x, y, grid = new Array(64);
+	            for (y = 0; y < 8; y++) {
+	                for (x = 0; x < 8; x++) {
+	                    grid[y * 8 + x] = new Board(oldGrid, new Pos(x, y), this.gameId, this.active, this.player);
+	                }
+	            }
+	            return new Board(grid, this.pos, this.gameId, this.active, this.player);
+	        };
+	        Board.prototype.map = function (f) {
+	            var x, y, grid = [];
+	            for (y = 0; y < 8; y++) {
+	                for (x = 0; x < 8; x++) {
+	                    grid[y * 8 + x] = f(this.grid[y * 8 + x]);
+	                }
+	            }
+	            return this;
+	        };
+	        Board.prototype.convolve = function (f) {
+	            return this.duplicate().map(f);
+	        };
+	        Board.prototype.selectNextPiece = function () {
+	            var x, y, nextCell;
+	            var activeColor = tileColorPattern[this.active.y][this.active.x];
+	            var nextPiece = (activeColor + 1) + (this.player * 8);
+	            for (y = 0; y < 8; y++) {
+	                for (x = 0; x < 8; x++) {
+	                    nextCell = this.grid[y * 8 + x];
+	                    if (nextCell === nextPiece) {
+	                        this.active.x = x;
+	                        this.active.y = y;
+	                        break;
+	                    }
+	                }
+	            }
+	            return this;
+	        };
+	        Board.prototype.emptyPath = function (srcPos, dstPos) {
+	            var dX = dstPos.x - srcPos.x, dY = dstPos.y - srcPos.y, stepX = (dX ? Math.abs(dX) / dX : 0), stepY = Math.abs(dY) / dY;
+	            var pathIsEmpty = true, x = srcPos.x + stepX, y = srcPos.y + stepY;
+	            while (y !== dstPos.y && pathIsEmpty) {
+	                if (this.grid[y * 8 + x]) {
+	                    pathIsEmpty = false;
+	                }
+	                y += stepY;
+	                x += stepX;
+	            }
+	            return pathIsEmpty;
+	        };
+	        Board.prototype.drawCells = function (context, geom) {
+	            this.convolve(drawCell(context, geom));
+	        };
+	        Board.prototype.gridGet = function (x, y) {
+	            return this.grid[y * 8 + x];
+	        };
+	        Board.prototype.gridSet = function (x, y, a) {
+	            this.grid[y * 8 + x] = a;
+	            return this;
+	        };
+	        return Board;
+	    }());
+	    exports.Board = Board;
+	    function legalMove(board) {
+	        return ((board.player
+	            ? board.active.y > board.pos.y
+	            : board.active.y < board.pos.y)
+	            && (board.extract() === 0)
+	            && ((Math.abs(board.active.x - board.pos.x)
+	                === Math.abs(board.active.y - board.pos.y))
+	                || (board.active.x - board.pos.x) === 0))
+	            && (board.emptyPath(board.active, board.pos));
+	    }
+	    function drawCell(context, geom) {
+	        return function (board) {
+	            var tileSide = geom.tileSide;
+	            var size = geom.size;
+	            var radius = geom.radius;
+	            // draw the background color
+	            var cell = board.extract(); // `pos`
+	            var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
+	            context.fillStyle = cellColor;
+	            context.fillRect(board.pos.x * tileSide, board.pos.y * tileSide, tileSide, tileSide);
+	            if (cell === 0) {
+	                return cell;
+	            }
+	            // if there is a piece on this cell, draw it as well
+	            var x = board.pos.x + 1;
+	            var y = board.pos.y + 1;
+	            var center = {
+	                x: ((x) * tileSide) - (tileSide / 2),
+	                y: ((y) * tileSide) - (tileSide / 2)
+	            };
+	            var bezel = (cell > size) ? colors[9] : colors[8];
+	            var color = colors[(cell - 1) % 8];
+	            // bezel
+	            context.beginPath();
+	            context.arc(center.x, center.y, radius, 0, Math.PI * 2, false);
+	            context.closePath();
+	            context.fillStyle = bezel;
+	            context.fill();
+	            context.strokeStyle = bezel;
+	            context.stroke();
+	            // piece color
+	            context.beginPath();
+	            context.arc(center.x, center.y, radius * 0.75, 0, Math.PI * 2, false);
+	            context.closePath();
+	            context.fillStyle = color;
+	            context.fill();
+	            context.strokeStyle = color;
+	            context.stroke();
+	            if (board.active !== null &&
+	                board.active.x === board.pos.x &&
+	                board.active.y === board.pos.y) {
+	                context.beginPath();
+	                context.arc(center.x, center.y, radius * 0.5, 0, Math.PI * 2, false);
+	                context.fillStyle = bezel;
+	                context.fill();
+	                context.strokeStyle = bezel;
+	                context.stroke();
+	            }
+	            return cell;
+	        };
+	    }
+	    function boardClicked(board, clickPos) {
+	        var cell = board.setPos(clickPos).extract();
+	        if (board.active === null) {
+	            board.active = new Pos(-1, -1);
+	        }
+	        // is this cell already active?
+	        if (board.active.x === board.pos.x &&
+	            board.active.y === board.pos.y) {
+	            // do nothing
+	            board.player = (board.player) ? 0 : 1;
+	            return board.selectNextPiece();
+	        }
+	        else {
+	            // not active and the cell contains a piece
+	            // -> select this new piece
+	            if (cell > 0) {
+	                board.active.x = board.pos.x;
+	                board.active.y = board.pos.y;
+	            }
+	            // not active and cell does not contain a piece
+	            // -> move the currently active piece here
+	            if (cell === 0) {
+	                if (!legalMove(board)) {
+	                    return board;
+	                }
+	                // else ...
+	                board = board.gridSet(board.pos.x, board.pos.y, board.gridGet(board.active.x, board.active.y));
+	                board = board.gridSet(board.active.x, board.active.y, 0);
+	                board.active = board.pos;
+	                // has somebody won?
+	                if ((!board.player && (board.pos.y === 7))
+	                    || (board.player && (board.pos.y === 0))) {
+	                    board.won = board.pos.y ? 1 : 0;
+	                }
+	                board.player = (board.player) ? 0 : 1;
+	            }
+	        }
+	        return board.selectNextPiece();
+	    }
+	    exports.boardClicked = boardClicked;
 	}.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 

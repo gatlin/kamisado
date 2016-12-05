@@ -1,5 +1,16 @@
-import { el, App } from './alm/alm';
-import { Board, Pos, Geom } from './board';
+import { el, App, Mailbox } from './alm/alm';
+import { Board, Pos, Geom, boardClicked } from './board';
+
+type HTMLElement = any | null;
+
+const canvasMBox = new Mailbox<HTMLElement>(null);
+
+enum Actions {
+    ResizeStart,
+    ResizeStop,
+    CanvasUpdate,
+    Click
+};
 
 function calculate_geometry(): Geom {
     const size = 8;
@@ -24,7 +35,7 @@ type GameState = {
     resizing: boolean;
 };
 
-function new_game(geom: Geom): Board<number> {
+function new_game(): Board<number> {
     let grid = [
         1, 2, 3, 4, 5, 6, 7, 8,
         0, 0, 0, 0, 0, 0, 0, 0,
@@ -34,13 +45,13 @@ function new_game(geom: Geom): Board<number> {
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
         16, 15, 14, 13, 12, 11, 10, 9];
-    return new Board(grid, new Pos(0, 0), 'default', geom);
+    return new Board(grid, new Pos(0, 0), 'default');
 };
 
 function new_state(): GameState {
     const geom: Geom = calculate_geometry();
     return {
-        board: new_game(geom),
+        board: new_game(),
         geom: geom,
         context: null,
         resizing: false,
@@ -70,29 +81,95 @@ function update(action, state) {
         }
     }
 
+    if (action['type'] === Actions.ResizeStop) {
+        return state;
+    }
+
+    if (action['type'] === Actions.CanvasUpdate && action.data !== null) {
+        const canvasEl = action.data;
+        state.context = canvasEl.getContext('2d');
+    }
+
+    if (action['type'] === Actions.Click) {
+        const raw = action.data;
+        let rect = raw
+            .target
+            .getBoundingClientRect();
+        let xCoord = raw.clientX - rect.left;
+        let yCoord = raw.clientY - rect.top;
+
+        const pos = new Pos(Math.floor(xCoord / state.geom.tileSide),
+            Math.floor(yCoord / state.geom.tileSide));
+
+        state.board = boardClicked(state.board, pos);
+        if (state.board.won !== null) {
+            // erase game
+        }
+    }
+
+    if (state.context) {
+        state.board.drawCells(state.context, state.geom);
+    }
+
     return state;
 }
 
-function render(state) {
-    return el('h1', {}, ['cool']);
-}
-
-enum Actions {
-    ResizeStart,
-    ResizeStop
-};
-
 function main(scope) {
-    scope.events.resize
+    scope.ports.resize_event
         .recv(evt => {
             scope.actions.send({
                 'type': Actions.ResizeStart,
                 data: {
                     evt: evt,
-                    actions: scope.actions
+                    updates: scope.actions
                 }
             });
         });
+
+    scope.events.click
+        .filter(evt => evt.getId() === 'board_canvas')
+        .recv(evt => {
+            scope.actions.send({
+                'type': Actions.Click,
+                'data': evt.getRaw()
+            });
+        });
+
+    canvasMBox
+        .recv(cnvs => {
+            scope.actions.send({
+                'type': Actions.CanvasUpdate,
+                'data': cnvs
+            });
+        });
+}
+
+function render(state) {
+    return el('div', { 'class': 'container', 'id': 'board' }, [
+        el('canvas', {
+            'id': 'board_canvas',
+            'width': state.geom.boardSide,
+            'height': state.geom.boardSide
+        }, []).subscribe(canvasMBox),
+        el('footer', { 'class': 'footer' }, [
+            el('div', { 'class': 'container' }, [
+                el('button', { 'id': 'reset-btn' }, [
+                    "Reset game"
+                ]),
+                el('p', {}, [
+                    el('a', {
+                        'href': 'https://github.com/gatlin/kamisado/blob/master/README.md'
+                    }, ["How to play and more info available here."]),
+                    " Made with ",
+                    el('a', { 'href': 'https://github.com/gatlin/Alm' },
+                        ["Alm"]),
+                    ". ",
+                    el('a', { 'href': 'https://github.com/gatlin/Kamisado' },
+                        ["Source code on GitHub."])
+                ])
+            ])
+        ])
+    ]);
 }
 
 const app = new App<GameState>({
@@ -102,5 +179,9 @@ const app = new App<GameState>({
     render: render,
     eventRoot: 'app',
     domRoot: 'app',
-    extraEvents: ['resize']
+    ports: ['resize_event']
 }).start();
+
+window.addEventListener('resize', (evt) => {
+    app.ports.resize_event.send(evt);
+}, false);

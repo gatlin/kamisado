@@ -1,4 +1,4 @@
-import { el, VTree } from './alm/alm';
+import { el } from './alm/alm';
 
 const colors = [
     '#F5B437', // 0:  orange
@@ -14,6 +14,8 @@ const colors = [
 ];
 
 const tileColorPattern = [
+    [0, 1, 2, 3, 4, 5, 6, 7],
+    [5, 0, 3, 6, 1, 4, 7, 2],
     [6, 3, 0, 5, 2, 7, 4, 1],
     [3, 2, 1, 0, 7, 6, 5, 4],
     [4, 5, 6, 7, 0, 1, 2, 3],
@@ -32,8 +34,6 @@ export class Pos {
     }
 }
 
-type Context = any; // kludge
-
 export type Geom = {
     tileSide: number;
     radius: number;
@@ -43,19 +43,18 @@ export type Geom = {
 
 export class Board<A> {
     private grid: Array<A>;
+
     public pos: Pos;
+    public active: Pos;
     public player: number;
     private gameId: string;
-    public active: Pos | null;
-    public won: number;
 
-    public geom: Geom;
+    public won: number;
 
     constructor(
         grid: Array<A>,
         pos: Pos,
         gameId: string,
-        geom: Geom,
         active: Pos = null,
         player: number = 0,
     ) {
@@ -63,8 +62,8 @@ export class Board<A> {
         this.pos = pos;
         this.gameId = gameId;
         this.player = player;
-        this.geom = geom;
-        this.won = -1;
+        this.won = null;
+        this.active = active;
     }
 
     public setPos(pos: Pos): Board<A> {
@@ -85,17 +84,14 @@ export class Board<A> {
                     oldGrid,
                     new Pos(x, y),
                     this.gameId,
-                    this.geom,
                     this.active,
                     this.player);
             }
         }
-        this.grid = grid;
         return new Board(
             grid,
             this.pos,
             this.gameId,
-            this.geom,
             this.active,
             this.player);
     }
@@ -107,6 +103,7 @@ export class Board<A> {
                 grid[y * 8 + x] = f(this.grid[y * 8 + x]);
             }
         }
+        return this;
     }
 
     public convolve(f) {
@@ -127,6 +124,8 @@ export class Board<A> {
                 }
             }
         }
+
+        return this;
     }
 
     public emptyPath(srcPos: Pos, dstPos: Pos): boolean {
@@ -149,26 +148,17 @@ export class Board<A> {
         return pathIsEmpty;
     }
 
-    public drawCells(context) {
-        return this.convolve(drawCell(context));
+    public drawCells(context, geom) {
+        this.convolve(drawCell(context, geom));
     }
 
-    public at(): A {
-        return this.grid[this.pos.y * 8 + this.pos.x];
+    public gridGet(x: number, y: number): A {
+        return this.grid[y * 8 + x];
     }
 
-    public set(a: A): this {
-        this.grid[this.pos.y * 8 + this.pos.x];
-        return this;
-    }
-
-    public setAt(x: number, y: number, a: A): this {
+    public gridSet(x: number, y: number, a: A): this {
         this.grid[y * 8 + x] = a;
         return this;
-    }
-
-    public atPos(x: number, y: number): A {
-        return this.grid[y * 8 + x];
     }
 }
 
@@ -183,14 +173,15 @@ function legalMove(board: Board<number>): boolean {
         && (board.emptyPath(board.active, board.pos));
 }
 
-function drawCell(context) {
-    return board => {
-        let tileSide = board.geom.tileSide;
-        let radius = board.geom.radius;
-        let size = board.size;
+function drawCell(context, geom) {
+    return (board: Board<number>) => {
+        let tileSide = geom.tileSide;
+        let size = geom.size;
+        let radius = geom.radius;
 
-        let cell = board.extract();
-        let cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
+        // draw the background color
+        var cell = board.extract(); // `pos`
+        var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
         context.fillStyle = cellColor;
         context.fillRect(board.pos.x * tileSide, board.pos.y * tileSide,
             tileSide, tileSide);
@@ -244,25 +235,28 @@ function drawCell(context) {
     };
 }
 
-function boardClicked(board: Board<number>, clickPos: Pos): Board<number> {
+export function boardClicked(board: Board<number>, clickPos: Pos): Board<number> {
+
     let cell = board.setPos(clickPos).extract();
+
     if (board.active === null) {
         board.active = new Pos(-1, -1);
     }
+
     // is this cell already active?
     if (board.active.x === board.pos.x &&
         board.active.y === board.pos.y) {
         // do nothing
-        board.player = board.player ? 0 : 1;
-        board.selectNextPiece();
-        return board;
+        board.player = (board.player) ? 0 : 1;
+        return board.selectNextPiece();
     }
 
     else {
         // not active and the cell contains a piece
         // -> select this new piece
         if (cell > 0) {
-            board.active === board.pos;
+            board.active.x = board.pos.x;
+            board.active.y = board.pos.y;
         }
 
         // not active and cell does not contain a piece
@@ -271,24 +265,20 @@ function boardClicked(board: Board<number>, clickPos: Pos): Board<number> {
             if (!legalMove(board)) {
                 return board;
             }
+            // else ...
+            board = board.gridSet(board.pos.x, board.pos.y, board.gridGet(
+                board.active.x, board.active.y));
+            board = board.gridSet(board.active.x, board.active.y, 0);
+
+            board.active = board.pos;
+            // has somebody won?
+            if ((!board.player && (board.pos.y === 7))
+                || (board.player && (board.pos.y === 0))) {
+                board.won = board.pos.y ? 1 : 0;
+            }
+
+            board.player = (board.player) ? 0 : 1;
         }
-
-        // else ...
-        board.set(board.atPos(board.active.x, board.active.y));
-        board.setAt(board.active.x, board.active.y, 0);
-
-        board.active.x = board.pos.x;
-        board.active.y = board.pos.y;
-
-        // has somebody won?
-        if ((!board.player && (board.pos.y === 7))
-            || (board.player && (board.pos.y === 0))) {
-            board.won = board.pos.y ? 1 : 0;
-        }
-
-        board.player = board.player ? 0 : 1;
     }
-
-    board.selectNextPiece();
-    return board;
+    return board.selectNextPiece();
 }
