@@ -55,7 +55,7 @@ function erase_game(): Board<number> {
 
 function load_game(): Board<number> {
     const saved = JSON.parse(window.localStorage.getItem('default'));
-    if (saved === null) {
+    if (!saved || saved === null) {
         return new_game();
     } else {
         return new Board<number>(saved.grid, new Pos(0, 0), saved.gameId,
