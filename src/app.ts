@@ -192,7 +192,7 @@ function render(state) {
                         'href': 'https://github.com/gatlin/kamisado/blob/master/README.md'
                     }, ["How to play and more info available here."]),
                     " Made with ",
-                    el('a', { 'href': 'https://github.com/gatlin/Alm' },
+                    el('a', { 'href': 'http://niltag.net/Alm' },
                         ["Alm"]),
                     ". ",
                     el('a', { 'href': 'https://github.com/gatlin/Kamisado' },
