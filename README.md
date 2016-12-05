@@ -44,4 +44,3 @@ Email me, Gatlin Johnson, at <gatlin@niltag.net> Don't be shy!
 I didn't invent this game; [these people did][kamisadogame].
 
 [kamisadogame]: http://www.kamisado.com/
-
