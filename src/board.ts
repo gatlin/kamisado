@@ -9,8 +9,10 @@ const colors = [
     '#DC442F', // 5:  red
     '#BAD360', // 6:  green
     '#6B451E', // 7:  brown
-    '#080D07', // 8:  player 0
-    '#F4FFF4'  // 9:  player 1
+    '#080D07',  // 8:  player 0
+    '#F4FFF4' // 9:  player 1
+
+
 ];
 
 const tileColorPattern = [
@@ -63,6 +65,20 @@ export class Board<A> {
         this.player = player;
         this.won = null;
         this.active = active;
+    }
+
+    static fresh() {
+
+        const grid = [
+            9, 10, 11, 12, 13, 14, 15, 16,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            8, 7, 6, 5, 4, 3, 2, 1];
+        return new Board(grid, new Pos(0, 0), 'default');
     }
 
     public getGrid() {
@@ -152,6 +168,7 @@ export class Board<A> {
     }
 
     public drawCells(context, geom) {
+        console.log('player =', this.player);
         this.convolve(drawCell(context, geom));
     }
 
@@ -166,7 +183,7 @@ export class Board<A> {
 }
 
 function legalMove(board: Board<number>): boolean {
-    return ((board.player
+    return ((!board.player
         ? board.active.y > board.pos.y
         : board.active.y < board.pos.y)
         && (board.extract() === 0)
@@ -274,8 +291,8 @@ export function boardClicked(board: Board<number>, clickPos: Pos): Board<number>
 
             board.active = board.pos;
             // has somebody won?
-            if ((!board.player && (board.pos.y === 7))
-                || (board.player && (board.pos.y === 0))) {
+            if ((!board.player && (board.pos.y === 0))
+                || (board.player && (board.pos.y === 7))) {
                 board.won = board.pos.y ? 1 : 0;
                 console.log('WINNER');
                 return board;

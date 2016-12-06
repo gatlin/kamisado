@@ -85,16 +85,7 @@
 	    // n > 0 && < 9 => player 0
 	    // else => player 1
 	    function new_game() {
-	        var grid = [
-	            1, 2, 3, 4, 5, 6, 7, 8,
-	            0, 0, 0, 0, 0, 0, 0, 0,
-	            0, 0, 0, 0, 0, 0, 0, 0,
-	            0, 0, 0, 0, 0, 0, 0, 0,
-	            0, 0, 0, 0, 0, 0, 0, 0,
-	            0, 0, 0, 0, 0, 0, 0, 0,
-	            0, 0, 0, 0, 0, 0, 0, 0,
-	            16, 15, 14, 13, 12, 11, 10, 9];
-	        return new board_1.Board(grid, new board_1.Pos(0, 0), 'default');
+	        return board_1.Board.fresh();
 	    }
 	    ;
 	    function erase_game() {
@@ -981,6 +972,18 @@
 	            this.won = null;
 	            this.active = active;
 	        }
+	        Board.fresh = function () {
+	            var grid = [
+	                9, 10, 11, 12, 13, 14, 15, 16,
+	                0, 0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0, 0,
+	                8, 7, 6, 5, 4, 3, 2, 1];
+	            return new Board(grid, new Pos(0, 0), 'default');
+	        };
 	        Board.prototype.getGrid = function () {
 	            return this.grid;
 	        };
@@ -1042,6 +1045,7 @@
 	            return pathIsEmpty;
 	        };
 	        Board.prototype.drawCells = function (context, geom) {
+	            console.log('player =', this.player);
 	            this.convolve(drawCell(context, geom));
 	        };
 	        Board.prototype.gridGet = function (x, y) {
@@ -1055,7 +1059,7 @@
 	    }());
 	    exports.Board = Board;
 	    function legalMove(board) {
-	        return ((board.player
+	        return ((!board.player
 	            ? board.active.y > board.pos.y
 	            : board.active.y < board.pos.y)
 	            && (board.extract() === 0)
@@ -1144,8 +1148,8 @@
 	                board = board.gridSet(board.active.x, board.active.y, 0);
 	                board.active = board.pos;
 	                // has somebody won?
-	                if ((!board.player && (board.pos.y === 7))
-	                    || (board.player && (board.pos.y === 0))) {
+	                if ((!board.player && (board.pos.y === 0))
+	                    || (board.player && (board.pos.y === 7))) {
 	                    board.won = board.pos.y ? 1 : 0;
 	                    console.log('WINNER');
 	                    return board;

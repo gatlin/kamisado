@@ -40,16 +40,7 @@ type GameState = {
 // n > 0 && < 9 => player 0
 // else => player 1
 function new_game(): Board<number> {
-    let grid = [
-        1, 2, 3, 4, 5, 6, 7, 8,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        16, 15, 14, 13, 12, 11, 10, 9];
-    return new Board(grid, new Pos(0, 0), 'default');
+    return Board.fresh();
 };
 
 function erase_game(): Board<number> {
