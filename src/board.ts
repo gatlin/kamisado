@@ -37,7 +37,6 @@ export class Pos {
 export type Geom = {
     tileSide: number;
     radius: number;
-    size: number;
     boardSide: number;
 };
 
@@ -180,7 +179,6 @@ function legalMove(board: Board<number>): boolean {
 function drawCell(context, geom) {
     return (board: Board<number>) => {
         let tileSide = geom.tileSide;
-        let size = geom.size;
         let radius = geom.radius;
 
         // draw the background color
@@ -200,7 +198,7 @@ function drawCell(context, geom) {
             y: ((y) * tileSide) - (tileSide / 2)
         };
 
-        var bezel = (cell > size) ? colors[9] : colors[8];
+        var bezel = (cell > 8) ? colors[9] : colors[8];
         var color = colors[(cell - 1) % 8];
 
         // bezel
