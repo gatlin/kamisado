@@ -1,5 +1,5 @@
 import { el, App, Mailbox } from './alm/alm';
-import { Board, Pos, Geom, boardClicked } from './board';
+import { Board, Pos, Geom, movePiece } from './board';
 
 type HTMLElement = any | null; // yet another type kludge
 // will be subscribed to updates to the canvas DOM node
@@ -9,13 +9,14 @@ const canvasMBox = new Mailbox<HTMLElement>(null);
 enum Actions {
     ResizeStart,
     CanvasUpdate,
-    Click,
-    Reset
+    Move,
+    Reset,
+    RemoteMove
 };
 
 // calculates size of the board and the tiles based on the window
 function calculate_geometry(): Geom {
-    const boardSide = 0.9 * (
+    const boardSide = 0.75 * (
         Math.min(window.innerWidth, window.innerHeight - 50));
     const tileSide = (boardSide / 8);
     const radius = (tileSide * 0.9) / 2;
@@ -27,6 +28,11 @@ function calculate_geometry(): Geom {
     };
 }
 
+type Move = {
+    src: Pos;
+    dst: Pos;
+};
+
 // the state of our app
 type GameState = {
     board: Board<number>;
@@ -34,6 +40,8 @@ type GameState = {
     context: any; // eh ...
     resizeStart: number;
     resizing: boolean;
+    move_number: number;
+    last_move: Move;
 };
 
 // n > 0 => a game piece
@@ -88,8 +96,17 @@ function new_state(): GameState {
         // these two deal with detecting window resizes so the canvas can be
         // redrawn
         resizing: false,
-        resizeStart: -1
+        resizeStart: -1,
+        move_number: 0,
+        last_move: null
     };
+}
+
+// turn remote coordinates around
+function flipPos(pos: Pos): Pos {
+    pos.x = Math.abs(pos.x - 7);
+    pos.y = Math.abs(pos.y - 7);
+    return pos;
 }
 
 // The state reducer.
@@ -124,7 +141,7 @@ function update(action, state) {
     }
 
     // the user clicked somewhere on the board
-    if (action['type'] === Actions.Click) {
+    if (action['type'] === Actions.Move) {
         const raw = action.data;
         let rect = raw
             .target
@@ -132,14 +149,32 @@ function update(action, state) {
         let xCoord = raw.clientX - rect.left;
         let yCoord = raw.clientY - rect.top;
 
+        const src = JSON.parse(JSON.stringify(state.board.active));
         const pos = new Pos(Math.floor(xCoord / state.geom.tileSide),
             Math.floor(yCoord / state.geom.tileSide));
+        const dst = JSON.parse(JSON.stringify(pos));
+        const success = movePiece(state.board, pos);
 
-        state.board = boardClicked(state.board, pos);
-        if (state.board.won !== null) {
-            state.board = erase_game();
+        if (success) {
+            state.move_number = state.move_number + 1;
+            state.last_move = {
+                src: src,
+                dst: dst
+            };
+            if (state.board.won !== null) {
+                state.board = erase_game();
+            }
         }
         save_game(state.board);
+    }
+
+    if (action['type'] === Actions.RemoteMove) {
+        const src = flipPos(action.data.src);
+        const dst = flipPos(action.data.dst);
+        if (src.x === state.board.active.x &&
+            src.y === state.board.active.y) {
+            const success = movePiece(state.board, dst);
+        }
     }
 
     if (action['type'] === Actions.Reset) {
@@ -157,7 +192,7 @@ function update(action, state) {
 
 // signal routing
 function main(scope) {
-    scope.ports.resize_event
+    scope.ports.inbound.resize
         .recv(evt => {
             scope.actions.send({
                 'type': Actions.ResizeStart,
@@ -168,11 +203,20 @@ function main(scope) {
             });
         });
 
+    scope.ports.inbound.moves
+        .recv(move => {
+            scope.actions.send({
+                'type': Actions.RemoteMove,
+                data: move
+            });
+        });
+
     scope.events.click
         .filter(evt => evt.getId() === 'board_canvas')
         .recv(evt => {
+            const raw = evt.getRaw();
             scope.actions.send({
-                'type': Actions.Click,
+                'type': Actions.Move,
                 'data': evt.getRaw()
             });
         });
@@ -188,6 +232,14 @@ function main(scope) {
     scope.events.click
         .filter(evt => evt.getId() === 'reset-btn')
         .recv(evt => { scope.actions.send({ 'type': Actions.Reset }); });
+
+    scope.state
+        .reduce(0, (state, move_number) => {
+            if (state.move_number > move_number) {
+                scope.ports.outbound.moves.send(state.last_move);
+            }
+            return state.move_number;
+        });
 }
 
 // state -> virtual DOM tree
@@ -202,17 +254,6 @@ function render(state) {
             el('div', { 'class': 'container' }, [
                 el('button', { 'id': 'reset-btn' }, [
                     "Reset game"
-                ]),
-                el('p', {}, [
-                    el('a', {
-                        'href': 'https://github.com/gatlin/kamisado/blob/master/README.md'
-                    }, ["How to play and more info available here."]),
-                    " Made with ",
-                    el('a', { 'href': 'http://niltag.net/Alm' },
-                        ["Alm"]),
-                    ". ",
-                    el('a', { 'href': 'https://github.com/gatlin/Kamisado' },
-                        ["Source code on GitHub."])
                 ])
             ])
         ])
@@ -225,7 +266,10 @@ export const kamisadoApp = new App<GameState>({
     update: update,
     main: main,
     render: render,
-    eventRoot: 'app',
-    domRoot: 'app',
-    ports: ['resize_event']
+    eventRoot: 'kamisado-game',
+    domRoot: 'kamisado-game',
+    ports: {
+        inbound: ['resize', 'moves'],
+        outbound: ['moves']
+    }
 });

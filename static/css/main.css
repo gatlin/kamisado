@@ -36,7 +36,8 @@ body {
     display: block;
     margin: 0 auto;
     padding: 0;
-    border: 1px solid #efefef;
+    border: 2px solid black;
+    border-radius: 3px;
 }
 .footer {
     /* Set the fixed height of the footer here */
@@ -66,4 +67,10 @@ body > .container {
 .footer > .container {
     padding-right: 15px;
     padding-left: 15px;
+}
+
+header h1 {
+    font-size: 36pt;
+    text-align: center;
+    margin-top: 15px;
 }

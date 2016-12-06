@@ -9,10 +9,8 @@ const colors = [
     '#DC442F', // 5:  red
     '#BAD360', // 6:  green
     '#6B451E', // 7:  brown
-    '#080D07',  // 8:  player 0
-    '#F4FFF4' // 9:  player 1
-
-
+    '#080D07', // 8:  player 0
+    '#F4FFF4'  // 9:  player 1
 ];
 
 const tileColorPattern = [
@@ -168,7 +166,6 @@ export class Board<A> {
     }
 
     public drawCells(context, geom) {
-        console.log('player =', this.player);
         this.convolve(drawCell(context, geom));
     }
 
@@ -254,9 +251,10 @@ function drawCell(context, geom) {
     };
 }
 
-export function boardClicked(board: Board<number>, clickPos: Pos): Board<number> {
+// returns a boolean stating if the move was successful
+export function movePiece(board: Board<number>, pos: Pos): boolean {
 
-    let cell = board.setPos(clickPos).extract();
+    let cell = board.setPos(pos).extract();
 
     if (board.active === null) {
         board.active = new Pos(-1, -1);
@@ -267,7 +265,8 @@ export function boardClicked(board: Board<number>, clickPos: Pos): Board<number>
         board.active.y === board.pos.y) {
         // do nothing
         board.player = (board.player) ? 0 : 1;
-        return board.selectNextPiece();
+        board = board.selectNextPiece();
+        return false;
     }
 
     else {
@@ -282,7 +281,7 @@ export function boardClicked(board: Board<number>, clickPos: Pos): Board<number>
         // -> move the currently active piece here
         if (cell === 0) {
             if (!legalMove(board)) {
-                return board;
+                return false;
             }
             // else ...
             board = board.gridSet(board.pos.x, board.pos.y, board.gridGet(
@@ -294,12 +293,12 @@ export function boardClicked(board: Board<number>, clickPos: Pos): Board<number>
             if ((!board.player && (board.pos.y === 0))
                 || (board.player && (board.pos.y === 7))) {
                 board.won = board.pos.y ? 1 : 0;
-                console.log('WINNER');
-                return board;
+                return true;
             }
 
             board.player = (board.player) ? 0 : 1;
         }
     }
-    return board.selectNextPiece();
+    board = board.selectNextPiece();
+    return true;
 }
