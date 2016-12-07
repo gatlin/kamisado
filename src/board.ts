@@ -1,6 +1,14 @@
-import { el } from './alm/alm';
+/**
+ * Board logic
+ *
+ * Provides logic for manipulating the game board, tracking state, validating
+ * moves, and other related utilities.
+ */
 
-const colors = [
+import { el } from './alm/alm';
+import { HasMap } from './alm/base';
+
+export const colors = [
     '#F5B437', // 0:  orange
     '#3340AE', // 1:  blue
     '#1E8AD1', // 2:  sky
@@ -13,7 +21,7 @@ const colors = [
     '#F4FFF4'  // 9:  player 1
 ];
 
-const tileColorPattern = [
+export const tileColorPattern = [
     [0, 1, 2, 3, 4, 5, 6, 7],
     [5, 0, 3, 6, 1, 4, 7, 2],
     [6, 3, 0, 5, 2, 7, 4, 1],
@@ -24,6 +32,10 @@ const tileColorPattern = [
     [7, 6, 5, 4, 3, 2, 1, 0]
 ];
 
+type BN = Board<number>; // shorthand
+type Context = any; // type kludge
+
+// Helper class
 export class Pos {
     public x: number;
     public y: number;
@@ -31,6 +43,23 @@ export class Pos {
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
+    }
+
+    public equals(that: Pos): boolean {
+        return (this.x === that.x &&
+            this.y === that.y);
+    }
+
+    public set(x: number, y: number): this {
+        this.x = JSON.parse(JSON.stringify(x));
+        this.y = JSON.parse(JSON.stringify(y));
+        return this;
+    }
+
+    public becomes(that: Pos) {
+        this.x = JSON.parse(JSON.stringify(that.x));
+        this.y = JSON.parse(JSON.stringify(that.y));
+        return this;
     }
 }
 
@@ -40,15 +69,25 @@ export type Geom = {
     boardSide: number;
 };
 
-export class Board<A> {
+export class Board<A> implements HasMap<A> {
+
+    // the actual 8x8 matrix, represented as an array of length 64
     private grid: Array<A>;
 
+    // used for indexing during convolution operations
     public pos: Pos;
-    public active: Pos;
+
+    // the position of the active cell
+    public active: Pos | null;
+
+    // the player whose turn it is. 0 or 1.
     public player: number;
+
+    // A (possibly) unique ID for this game.
     public gameId: string;
 
-    public won: number;
+    // the player who has won, or null
+    public won: number | null;
 
     constructor(
         grid: Array<A>,
@@ -66,7 +105,6 @@ export class Board<A> {
     }
 
     static fresh() {
-
         const grid = [
             9, 10, 11, 12, 13, 14, 15, 16,
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -80,7 +118,7 @@ export class Board<A> {
     }
 
     public getGrid() {
-        return this.grid;
+        return JSON.parse(JSON.stringify(this.grid));
     }
 
     public setPos(pos: Pos): Board<A> {
@@ -88,10 +126,13 @@ export class Board<A> {
         return this;
     }
 
+    // get the value of the grid at `this.pos`
     public extract(): A {
         return this.grid[this.pos.y * 8 + this.pos.x];
     }
 
+    // create a `Board` of `Board`s, with the position of each sub-`Board` being
+    // the value of its `pos` property
     public duplicate(): Board<Board<A>> {
         let oldGrid = this.grid;
         let x, y, grid = new Array(64);
@@ -113,21 +154,41 @@ export class Board<A> {
             this.player);
     }
 
-    public map(f) {
-        let x, y, grid = [];
+    public map<B>(f: (t: A) => B): Board<B> {
+        return new Board(
+            this.grid.map(f),
+            this.pos,
+            this.gameId,
+            this.active,
+            this.player);
+    }
+
+    // This is (and should be) equivalent to
+    // `this.duplicate.map(f)`. For efficiency though I'm inlining a bit.
+    // That said `#duplicate` and `#map` are provided to test this.
+    public convolve<B>(f: (t: Board<A>) => B): Board<B> {
+        let oldGrid = this.grid;
+        let x, y, grid = new Array(64);
         for (y = 0; y < 8; y++) {
             for (x = 0; x < 8; x++) {
-                grid[y * 8 + x] = f(this.grid[y * 8 + x]);
+                grid[y * 8 + x] = new Board(
+                    oldGrid,
+                    new Pos(x, y),
+                    this.gameId,
+                    this.active,
+                    this.player);
             }
         }
-        return this;
+        return new Board(
+            grid.map(f),
+            this.pos,
+            this.gameId,
+            this.active,
+            this.player);
     }
 
-    public convolve(f) {
-        return this.duplicate().map(f);
-    }
-
-    public selectNextPiece() {
+    // Determines the next piece based on the color of the cell landed on
+    public selectNextPiece(): this {
         let x, y, nextCell;
         let activeColor = tileColorPattern[this.active.y][this.active.x];
         let nextPiece = (activeColor + 1) + (this.player * 8);
@@ -145,6 +206,7 @@ export class Board<A> {
         return this;
     }
 
+    // Determines whether a path between two positions is empty
     public emptyPath(srcPos: Pos, dstPos: Pos): boolean {
         const dX = dstPos.x - srcPos.x
             , dY = dstPos.y - srcPos.y
@@ -165,21 +227,20 @@ export class Board<A> {
         return pathIsEmpty;
     }
 
-    public drawCells(context, geom) {
-        this.convolve(drawCell(context, geom));
-    }
-
+    // Public way to access grid data at a location
     public gridGet(x: number, y: number): A {
         return this.grid[y * 8 + x];
     }
 
+    // Public way to set grid data at a location
     public gridSet(x: number, y: number, a: A): this {
         this.grid[y * 8 + x] = a;
         return this;
     }
 }
 
-function legalMove(board: Board<number>): boolean {
+// Answers the question of whether the board is in a legal state
+function legalMove(board: BN): boolean {
     return ((!board.player
         ? board.active.y > board.pos.y
         : board.active.y < board.pos.y)
@@ -190,8 +251,15 @@ function legalMove(board: Board<number>): boolean {
         && (board.emptyPath(board.active, board.pos));
 }
 
-function drawCell(context, geom) {
-    return (board: Board<number>) => {
+// Convolves `drawCell` over a whole `Board<number>`
+export function drawCells(board: BN, context: Context, geom: Geom): BN {
+    return board.convolve(drawCell(context, geom));
+}
+
+// Draws the cell on a `Board<number>` at its `#pos` property,
+// given a canvas drawing context and a geometry.
+function drawCell(context: Context, geom: Geom) {
+    return (board: BN): number => {
         let tileSide = geom.tileSide;
         let radius = geom.radius;
 
@@ -252,7 +320,7 @@ function drawCell(context, geom) {
 }
 
 // returns a boolean stating if the move was successful
-export function movePiece(board: Board<number>, pos: Pos): boolean {
+export function movePiece(board: BN, pos: Pos): boolean {
 
     let cell = board.setPos(pos).extract();
 
@@ -261,8 +329,7 @@ export function movePiece(board: Board<number>, pos: Pos): boolean {
     }
 
     // is this cell already active?
-    if (board.active.x === board.pos.x &&
-        board.active.y === board.pos.y) {
+    if (board.active.equals(board.pos)) {
         // do nothing
         board.player = (board.player) ? 0 : 1;
         board = board.selectNextPiece();
@@ -273,8 +340,7 @@ export function movePiece(board: Board<number>, pos: Pos): boolean {
         // not active and the cell contains a piece
         // -> select this new piece
         if (cell > 0) {
-            board.active.x = board.pos.x;
-            board.active.y = board.pos.y;
+            board.active.becomes(board.pos);
         }
 
         // not active and cell does not contain a piece
@@ -288,7 +354,7 @@ export function movePiece(board: Board<number>, pos: Pos): boolean {
                 board.active.x, board.active.y));
             board = board.gridSet(board.active.x, board.active.y, 0);
 
-            board.active = board.pos;
+            board.active.becomes(board.pos);
             // has somebody won?
             if ((!board.player && (board.pos.y === 0))
                 || (board.player && (board.pos.y === 7))) {

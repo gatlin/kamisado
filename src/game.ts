@@ -1,5 +1,5 @@
 import { el, App, Mailbox } from './alm/alm';
-import { Board, Pos, Geom, movePiece } from './board';
+import { Board, Pos, Geom, movePiece, drawCells } from './board';
 
 type HTMLElement = any | null; // yet another type kludge
 // will be subscribed to updates to the canvas DOM node
@@ -9,7 +9,7 @@ const canvasMBox = new Mailbox<HTMLElement>(null);
 enum Actions {
     ResizeStart,
     CanvasUpdate,
-    Move,
+    UserMove,
     Reset,
     RemoteMove
 };
@@ -42,6 +42,8 @@ type GameState = {
     resizing: boolean;
     move_number: number;
     last_move: Move;
+    current_player: number; // 0 or 1
+    i_am: number; // 0 or 1, AI player number
 };
 
 // n > 0 => a game piece
@@ -98,7 +100,9 @@ function new_state(): GameState {
         resizing: false,
         resizeStart: -1,
         move_number: 0,
-        last_move: null
+        last_move: null,
+        current_player: 0,
+        i_am: 1
     };
 }
 
@@ -123,7 +127,8 @@ function update(action, state) {
                 window.setTimeout(resizeFinish, 200);
             } else {
                 state.resizing = false;
-                state.board.drawCells(state.context, state.geom);
+                state.board = drawCells(state.board, state.context, state.geom);
+                //                state.board.drawCells(state.context, state.geom);
             }
         };
 
@@ -141,7 +146,7 @@ function update(action, state) {
     }
 
     // the user clicked somewhere on the board
-    if (action['type'] === Actions.Move) {
+    if (action['type'] === Actions.UserMove) {
         const raw = action.data;
         let rect = raw
             .target
@@ -184,7 +189,7 @@ function update(action, state) {
 
     // also if we have a drawing context redraw the state of the board
     if (state.context) {
-        state.board.drawCells(state.context, state.geom);
+        state.board = drawCells(state.board, state.context, state.geom);
     }
 
     return state;
@@ -216,7 +221,7 @@ function main(scope) {
         .recv(evt => {
             const raw = evt.getRaw();
             scope.actions.send({
-                'type': Actions.Move,
+                'type': Actions.UserMove,
                 'data': evt.getRaw()
             });
         });
