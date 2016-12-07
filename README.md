@@ -9,6 +9,8 @@ Kamisado!
 Two players each have 8 pieces across the board from one another. The object of
 the game is to get one of your pieces to the other side.
 
+You are the black player, the computer is the white player.
+
 Black player goes first. On the first move the player must select a piece to be
 *active*. Only active pieces may be moved. Active pieces have dots in the
 middle of them.
