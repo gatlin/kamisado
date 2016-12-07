@@ -65,14 +65,18 @@ function load_game(): Board<number> {
         return new_game();
     } else {
         const parsed = JSON.parse(saved);
-        return new Board<number>(
-            parsed.grid,
-            new Pos(0, 0),
-            parsed.gameId,
-            (parsed.active !== null
-                ? new Pos(parsed.active.x, parsed.active.y)
-                : null),
-            parsed.player);
+        if (parsed) {
+            return new Board<number>(
+                parsed.grid,
+                new Pos(0, 0),
+                parsed.gameId,
+                (parsed.active !== null
+                    ? new Pos(parsed.active.x, parsed.active.y)
+                    : null),
+                parsed.player);
+        } else {
+            erase_game();
+        }
     }
 }
 
