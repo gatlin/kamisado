@@ -50,16 +50,17 @@ export class Pos {
             this.y === that.y);
     }
 
-    public set(x: number, y: number): this {
-        this.x = JSON.parse(JSON.stringify(x));
-        this.y = JSON.parse(JSON.stringify(y));
-        return this;
-    }
-
     public becomes(that: Pos) {
         this.x = JSON.parse(JSON.stringify(that.x));
         this.y = JSON.parse(JSON.stringify(that.y));
         return this;
+    }
+
+    public clone(): Pos {
+        return new Pos(
+            JSON.parse(JSON.stringify(this.x)),
+            JSON.parse(JSON.stringify(this.y))
+        );
     }
 }
 

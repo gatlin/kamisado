@@ -69,18 +69,23 @@ function load_game(): Board<number> {
             parsed.grid,
             new Pos(0, 0),
             parsed.gameId,
-            parsed.active,
+            (parsed.active !== null
+                ? new Pos(parsed.active.x, parsed.active.y)
+                : null),
             parsed.player);
     }
 }
 
 // save a game to local storage
 function save_game(board) {
+    const active = board.active !== null
+        ? { x: board.active.x, y: board.active.y }
+        : null;
     const state = {
         grid: board.getGrid(),
         player: board.player,
         gameId: board.gameId,
-        active: board.active
+        active: active
     }
 
     window.localStorage.setItem('default',
@@ -154,14 +159,17 @@ function update(action, state) {
         let xCoord = raw.clientX - rect.left;
         let yCoord = raw.clientY - rect.top;
 
-        const src = JSON.parse(JSON.stringify(state.board.active));
+        const src = state.board.active !== null
+            ? state.board.active.clone()
+            : null;
         const pos = new Pos(Math.floor(xCoord / state.geom.tileSide),
             Math.floor(yCoord / state.geom.tileSide));
-        const dst = JSON.parse(JSON.stringify(pos));
+        const dst = pos.clone();
         const success = movePiece(state.board, pos);
 
-        if (success) {
+        if (success || src.equals(dst)) {
             state.move_number = state.move_number + 1;
+            state.current_player = (state.current_player + 1) % 2;
             state.last_move = {
                 src: src,
                 dst: dst
@@ -174,12 +182,15 @@ function update(action, state) {
     }
 
     if (action['type'] === Actions.RemoteMove) {
-        const src = flipPos(action.data.src);
-        const dst = flipPos(action.data.dst);
-        if (src.x === state.board.active.x &&
-            src.y === state.board.active.y) {
-            const success = movePiece(state.board, dst);
+        const success = movePiece(state.board, action.data.clone());
+        if (success) {
+            state.current_player = (state.current_player + 1) % 2;
+            if (state.board.won !== null) {
+                //   state.board = erase_game();
+                console.log('computer won!');
+            }
         }
+        save_game(state.board);
     }
 
     if (action['type'] === Actions.Reset) {
@@ -241,7 +252,7 @@ function main(scope) {
     scope.state
         .reduce(0, (state, move_number) => {
             if (state.move_number > move_number) {
-                scope.ports.outbound.moves.send(state.last_move);
+                scope.ports.outbound.moves.send(state.board);
             }
             return state.move_number;
         });
