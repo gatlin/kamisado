@@ -16,8 +16,17 @@ enum Actions {
 
 // calculates size of the board and the tiles based on the window
 function calculate_geometry(): Geom {
-    const boardSide = 0.75 * (
-        Math.min(window.innerWidth, window.innerHeight - 50));
+    const winSize = Math.min(window.innerWidth,
+        window.innerHeight - 50);
+    let boardSide;
+    if (winSize >= 480) {
+        boardSide = 0.75 * winSize;
+    } else {
+        boardSide = 0.95 * winSize;
+    }
+    if (boardSide < 480) {
+        boardSide = window.innerWidth;
+    }
     const tileSide = (boardSide / 8);
     const radius = (tileSide * 0.9) / 2;
 
