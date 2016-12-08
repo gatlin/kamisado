@@ -200,7 +200,6 @@ function update(action, state) {
             state.current_player = (state.current_player + 1) % 2;
             if (state.board.won !== null) {
                 //   state.board = erase_game();
-                console.log('computer won!');
             }
         }
         save_game(state.board);
