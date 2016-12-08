@@ -7,18 +7,14 @@ export class KamisadoAI {
         this.whoAmI = whoAmI;
     }
 
-    private getMoves(board: Board<number>, whereAmI: Pos): Array<Pos> {
+    private getMoves(board: Board<number>, whereAmI: Pos, player): Array<Pos> {
         let results: Array<Pos> = [];
-        const dY = board.player ? 1 : -1;
-        const winY = board.player ? 7 : 0;
+        const dY = player ? 1 : -1;
+        const winY = player ? 7 : 0;
         for (let dX = -1; dX < 2; dX++) {
             const pos = whereAmI.clone();
             let done = false;
             while (!done) {
-                // if you can win just do that
-                if (pos.y === winY && !board.gridGet(pos.x, pos.y)) {
-                    return [pos];
-                }
                 pos.x = pos.x + dX;
                 pos.y = pos.y + dY;
                 if ((pos.y < 8 && pos.y >= 0 &&
@@ -58,7 +54,14 @@ export class KamisadoAI {
         }
 
         const otherPlayer = (this.whoAmI + 1) % 2;
-        const myMoves = this.getMoves(board, board.active)
+        const myMoves = this.getMoves(board, board.active, this.whoAmI);
+
+        const winY = this.whoAmI ? 7 : 0;
+        for (let move of myMoves) {
+            if (move.y === winY) {
+                return move;
+            }
+        }
 
         // create an index of their piece => positions which lead to it
         const moveIndex = myMoves
@@ -80,14 +83,24 @@ export class KamisadoAI {
         // and return a position which leaves the opponent with the fewest
         // possibilities
 
+        const loseY = (winY - 7) % 8;
+
         for (let pieceS in moveIndex) {
             const piece = parseInt(pieceS);
             const pos = this.findPiece(board, piece);
-            const pieceMovesNum = this.getMoves(board, pos).length;
+            const pieceMoves = this.getMoves(board, pos, otherPlayer);
+            let pieceMovesNum = pieceMoves.length;
+            console.log('piece ' + piece + ' moves:');
+            console.log(pieceMoves);
+            for (let move of pieceMoves) {
+                if (move.y === loseY) {
+                    console.log('piece ' + piece + ' could win');
+                    pieceMovesNum += 25;
+                }
+            }
             if (pieceMovesNum < lowest_option_num) {
                 lowest_option_num = pieceMovesNum;
                 const idx = Math.floor(Math.random() * moveIndex[piece].length);
-                console.log('idx =', idx);
                 result = moveIndex[piece][idx];
             }
         }
