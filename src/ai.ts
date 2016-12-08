@@ -1,5 +1,7 @@
 import { Board, Pos, colors, tileColorPattern } from './board';
 
+type Pair<A, B> = [A, B];
+
 export class KamisadoAI {
     private whoAmI: number; // 0 or 1
 
@@ -7,22 +9,29 @@ export class KamisadoAI {
         this.whoAmI = whoAmI;
     }
 
-    private getMoves(board: Board<number>, whereAmI: Pos, player): Array<Pos> {
+    private getMoves(board: Board<number>, whereAmI: Pos, player, ignore =
+        null): Array<Pos> {
         let results: Array<Pos> = [];
-        const dY = player ? 1 : -1;
+        const stepY = player ? 1 : -1;
         const winY = player ? 7 : 0;
-        for (let dX = -1; dX < 2; dX++) {
-            const pos = whereAmI.clone();
+
+        for (let stepX of [1, 0, -1]) {
+            let dY = stepY, dX = stepX, pos;
             let done = false;
             while (!done) {
-                pos.x = pos.x + dX;
-                pos.y = pos.y + dY;
-                if ((pos.y < 8 && pos.y >= 0 &&
-                    pos.x < 8 && pos.x >= 0) &&
-                    !board.gridGet(pos.x, pos.y)) {
-                    results.push(pos.clone());
-                } else {
+                pos = whereAmI.clone();
+                pos.x += dX;
+                pos.y += dY;
+                const ignorePos = (ignore !== null && pos.equals(ignore));
+                if (pos.y > 7 || pos.y < 0 ||
+                    pos.x > 7 || pos.x < 0 ||
+                    (board.gridGet(pos.x, pos.y) &&
+                        !ignorePos)) {
                     done = true;
+                } else {
+                    results.push(pos);
+                    dY += stepY;
+                    dX += stepX;
                 }
             }
         }
@@ -54,57 +63,69 @@ export class KamisadoAI {
         }
 
         const otherPlayer = (this.whoAmI + 1) % 2;
-        const myMoves = this.getMoves(board, board.active, this.whoAmI);
-
         const winY = this.whoAmI ? 7 : 0;
+        const loseY = this.whoAmI ? 0 : 7;
+        const myMoves = this.getMoves(board, board.active, this.whoAmI, null);
+        console.log('myMoves length', myMoves.length);
+
+        // build a set of opponent pieces using colors and store the positions
+        // also if any moves straight allow me to win, shortcircuit
+        // also keep track of which opponent piece has the fewest options
+        // and thwart the ones with few options where one option is a winner
+        const opponent_pieces = {};
+        const opponent_moves = {};
+        let lowest_score = 10000;
+        let lowest_scoring_piece = null;
         for (let move of myMoves) {
             if (move.y === winY) {
                 return move;
             }
-        }
+            const color = tileColorPattern[move.y][move.x];
+            const piece = (color + 1) + (otherPlayer * 8);
 
-        // create an index of their piece => positions which lead to it
-        const moveIndex = myMoves
-            .reduce((mI, pos) => {
-                const color = tileColorPattern[pos.y][pos.x];
-                const theirPiece = (color + 1) + (otherPlayer * 8);
-                if (!(theirPiece in mI)) {
-                    mI[theirPiece] = [pos];
-                } else {
-                    mI[theirPiece].push(pos);
-                }
-                return mI;
-            }, {});
-        console.log('moveIndex', moveIndex);
-        let lowest_option_num = 100;
-        let result = null;
+            // find the location of the piece
 
-        // finally, get the number of options for each of their possible pieces
-        // and return a position which leaves the opponent with the fewest
-        // possibilities
+            if (!(piece in opponent_pieces)) {
+                opponent_pieces[piece] = [move];
+            } else {
+                opponent_pieces[piece].push(move);
+            }
 
-        const loseY = (winY - 7) % 8;
+            // avoid recomputation
+            if (piece in opponent_moves) {
+                continue;
+            }
 
-        for (let pieceS in moveIndex) {
-            const piece = parseInt(pieceS);
-            const pos = this.findPiece(board, piece);
-            const pieceMoves = this.getMoves(board, pos, otherPlayer);
-            let pieceMovesNum = pieceMoves.length;
-            console.log('piece ' + piece + ' moves:');
-            console.log(pieceMoves);
-            for (let move of pieceMoves) {
-                if (move.y === loseY) {
-                    console.log('piece ' + piece + ' could win');
-                    pieceMovesNum += 25;
+            const piece_pos = this.findPiece(board, piece);
+            const piece_moves = this.getMoves(board, piece_pos, otherPlayer,
+                board.active);
+
+            opponent_moves[piece] = piece_moves;
+
+            let penalty = 0;
+            // if the piece can win, exclude it
+            for (let piece_move of piece_moves) {
+                if (piece_move.y === loseY) {
+                    console.log('piece ' + piece + ' can win');
+                    penalty += 25;
                 }
             }
-            if (pieceMovesNum < lowest_option_num) {
-                lowest_option_num = pieceMovesNum;
-                const idx = Math.floor(Math.random() * moveIndex[piece].length);
-                result = moveIndex[piece][idx];
+            const score = penalty + piece_moves.length;
+            console.log('piece ' + piece + ' score: ' + score);
+            if (score < lowest_score) {
+                lowest_score = score;
+                lowest_scoring_piece = piece;
             }
         }
-        console.log('result', result);
-        return (result ? result : board.active);
+
+        console.log('lowest scoring piece', lowest_scoring_piece);
+        console.log('lowest score', lowest_score);
+
+        const max = opponent_pieces[lowest_scoring_piece].length;
+        return opponent_pieces[lowest_scoring_piece][
+            Math.floor(
+                Math.random() * max
+            )
+        ];
     }
 }
