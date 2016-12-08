@@ -76,6 +76,9 @@ export class KamisadoAI {
         const opponent_moves = {};
         let lowest_score = 10000;
         let lowest_scoring_piece = null;
+        if (myMoves.length === 0) {
+            return board.active;
+        }
         for (let move of myMoves) {
             if (move.y === winY) {
                 return move;
