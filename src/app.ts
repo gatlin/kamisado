@@ -10,7 +10,7 @@ window.addEventListener('resize', (evt) => {
     runtime.ports.inbound.resize.send(evt);
 }, false);
 
-// for sending to the web sockets
+// for game <-> AI interaction
 runtime.ports.outbound.moves.recv(board => {
     const nextMove = ai.nextMove(board);
     if (nextMove) {
