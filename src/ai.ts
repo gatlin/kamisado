@@ -66,7 +66,6 @@ export class KamisadoAI {
         const winY = this.whoAmI ? 7 : 0;
         const loseY = this.whoAmI ? 0 : 7;
         const myMoves = this.getMoves(board, board.active, this.whoAmI, null);
-        console.log('myMoves length', myMoves.length);
 
         // build a set of opponent pieces using colors and store the positions
         // also if any moves straight allow me to win, shortcircuit
@@ -114,15 +113,11 @@ export class KamisadoAI {
                 }
             }
             const score = penalty + piece_moves.length;
-            console.log('piece ' + piece + ' score: ' + score);
             if (score < lowest_score) {
                 lowest_score = score;
                 lowest_scoring_piece = piece;
             }
         }
-
-        console.log('lowest scoring piece', lowest_scoring_piece);
-        console.log('lowest score', lowest_score);
 
         const max = opponent_pieces[lowest_scoring_piece].length;
         return opponent_pieces[lowest_scoring_piece][
