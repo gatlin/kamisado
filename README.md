@@ -3,37 +3,31 @@ Kamisado!
 
 2016, Gatlin Johnson.
 
+I did not come up with the game kamisado, just this online version of it.
+
 0. How to play
 ---
 
-Two players each have 8 pieces across the board from one another. The object of
-the game is to get one of your pieces to the other side.
+You are the black player, the AI is the white player.
 
-You are the black player, the computer is the white player.
+The object of the game is to get one of your pieces to the other side of the
+board.
 
-Black player goes first. On the first move the player must select a piece to be
-*active*. Only active pieces may be moved. Active pieces have dots in the
-middle of them.
+You start by selecting one of the black pieces and then where it should
+go. A piece may be moved **forward** or **diagonally** (one tile up, one tile to
+the side). You may move any distance you like but you may not go around another
+piece. (Don't worry, the game won't let you pick wrong).
 
-On each turn a player must select a tile for their active piece to move to. A
-piece may only go directly forward or diagonally forward. A piece may be moved
-any distance but it may not land on or skip over another piece.
+Now for the fun part: *the color of the tile you land on determines which piece
+your opponent moves* (and vice versa).
 
-The game will not let you make an illegal move.
-
-The color of the tile you move your piece to becomes the color of your
-opponent's active piece.
-
-When a player wins the board resets and starts a new game.
+Right now, when you win the board automatically resets.
 
 2. Notes / plans
 ---
 
-It's pretty simple right now. Suggestions are always welcome!
-
-  - Allow the board to be oriented the other way
-  - Allow players to start with whichever color they choose
-  - Two-player remote playing
+It's pretty simple right now. I want to have more happen when either player
+wins. Also multiplayer would be sweet.
 
 3. Questions / comments / bugs?
 ---
