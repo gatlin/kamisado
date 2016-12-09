@@ -130,13 +130,6 @@ function new_state(): GameState {
     };
 }
 
-// turn remote coordinates around
-function flipPos(pos: Pos): Pos {
-    pos.x = Math.abs(pos.x - 7);
-    pos.y = Math.abs(pos.y - 7);
-    return pos;
-}
-
 // The state reducer.
 function update(action, state) {
     if (action['type'] === Actions.ResizeStart) {

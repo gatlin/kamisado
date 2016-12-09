@@ -1,7 +1,5 @@
 import { Board, Pos, colors, tileColorPattern } from './board';
 
-type Pair<A, B> = [A, B];
-
 export class KamisadoAI {
     private whoAmI: number; // 0 or 1
 
@@ -108,7 +106,6 @@ export class KamisadoAI {
             // if the piece can win, exclude it
             for (let piece_move of piece_moves) {
                 if (piece_move.y === loseY) {
-                    console.log('piece ' + piece + ' can win');
                     penalty += 25;
                 }
             }

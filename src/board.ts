@@ -309,26 +309,22 @@ function drawCell(context: Context, geom: Geom) {
         var color = colors[(cell - 1) % 8];
 
         // bezel
-        /*
         context.beginPath();
         context.arc(center.x, center.y, radius, 0,
             Math.PI * 2, false);
         context.closePath();
-        */
-        magic_circle(context, center.x, center.y, radius);
+        //magic_circle(context, center.x, center.y, radius);
         context.fillStyle = bezel;
         context.fill();
         context.strokeStyle = bezel;
         context.stroke();
 
         // piece color
-        /*
         context.beginPath();
         context.arc(center.x, center.y, radius * 0.75, 0,
             Math.PI * 2, false);
         context.closePath();
-        */
-        magic_circle(context, center.x, center.y, radius * 0.75);
+        //magic_circle(context, center.x, center.y, radius * 0.75);
         context.fillStyle = color;
         context.fill();
         context.strokeStyle = color;
@@ -337,11 +333,9 @@ function drawCell(context: Context, geom: Geom) {
         if (board.active !== null &&
             board.active.x === board.pos.x &&
             board.active.y === board.pos.y) {
-            /*
             context.beginPath();
             context.arc(center.x, center.y, radius * 0.5, 0,
                 Math.PI * 2, false);
-            */
             magic_circle(context, center.x, center.y, radius * 0.5);
             context.fillStyle = bezel;
             context.fill();
