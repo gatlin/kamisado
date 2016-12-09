@@ -164,7 +164,8 @@ function update(action, state) {
     }
 
     // the user clicked somewhere on the board
-    if (action['type'] === Actions.UserMove) {
+    if (action['type'] === Actions.UserMove &&
+        state.board.player === 0) {
         const raw = action.data;
         let rect = raw
             .target
