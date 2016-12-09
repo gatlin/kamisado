@@ -28,13 +28,18 @@ function calculate_geometry(): Geom {
         boardSide = window.innerWidth;
     }
 
+    const pixelRatio = window.devicePixelRatio || 1;
+
     const tileSide = (boardSide / 8);
     const radius = (tileSide * 0.9) / 2;
+
+
 
     return {
         boardSide: boardSide,
         tileSide: tileSide,
-        radius: radius
+        radius: radius,
+        pixelRatio: pixelRatio
     };
 }
 
@@ -162,6 +167,7 @@ function update(action, state) {
     if (action['type'] === Actions.CanvasUpdate && action.data !== null) {
         const canvasEl = action.data;
         state.context = canvasEl.getContext('2d');
+        state.context.scale(state.geom.pixelRatio, state.geom.pixelRatio);
     }
 
     // the user clicked somewhere on the board

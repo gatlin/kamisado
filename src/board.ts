@@ -68,6 +68,7 @@ export type Geom = {
     tileSide: number;
     radius: number;
     boardSide: number;
+    pixelRatio: number;
 };
 
 export class Board<A> implements HasMap<A> {
@@ -283,15 +284,15 @@ function magic_circle(ctx, x, y, r) {
 // given a canvas drawing context and a geometry.
 function drawCell(context: Context, geom: Geom) {
     return (board: BN): number => {
-        let tileSide = geom.tileSide;
-        let radius = geom.radius;
+        let tileSide = geom.tileSide / geom.pixelRatio;
+        let radius = geom.radius / geom.pixelRatio;
 
         // draw the background color
         var cell = board.extract(); // `pos`
         var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
         context.fillStyle = cellColor;
-        const rectStart = [(board.pos.x * tileSide) + 0.5,
-        (board.pos.y * tileSide) + 0.5];
+        const rectStart = [(board.pos.x * tileSide),
+        (board.pos.y * tileSide)];
         context.fillRect(rectStart[0], rectStart[1], tileSide, tileSide);
 
         if (cell === 0) { return cell; }
@@ -300,8 +301,8 @@ function drawCell(context: Context, geom: Geom) {
         var x = board.pos.x + 1;
         var y = board.pos.y + 1;
         var center = {
-            x: ((x) * tileSide) - (tileSide / 2) + 0.5,
-            y: ((y) * tileSide) - (tileSide / 2) + 0.5
+            x: ((x) * tileSide) - (tileSide / 2),
+            y: ((y) * tileSide) - (tileSide / 2)
         };
 
         var bezel = (cell > 8) ? colors[9] : colors[8];
