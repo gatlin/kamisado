@@ -91,12 +91,15 @@ export class Board<A> implements HasMap<A> {
     // the player who has won, or null
     public won: number | null;
 
+    private firstMove: boolean = true;
+
     constructor(
         grid: Array<A>,
         pos: Pos,
         gameId: string,
         active: Pos = null,
         player: number = 0,
+        firstMove: boolean = true
     ) {
         this.grid = grid;
         this.pos = pos;
@@ -104,6 +107,7 @@ export class Board<A> implements HasMap<A> {
         this.player = player;
         this.won = null;
         this.active = active;
+        this.firstMove = true;
     }
 
     static fresh() {
@@ -128,6 +132,10 @@ export class Board<A> implements HasMap<A> {
         return this;
     }
 
+    public isFirstMove() {
+        return this.firstMove;
+    }
+
     // get the value of the grid at `this.pos`
     public extract(): A {
         return this.grid[this.pos.y * 8 + this.pos.x];
@@ -145,7 +153,8 @@ export class Board<A> implements HasMap<A> {
                     new Pos(x, y),
                     this.gameId,
                     this.active,
-                    this.player);
+                    this.player,
+                    this.firstMove);
             }
         }
         return new Board(
@@ -153,7 +162,8 @@ export class Board<A> implements HasMap<A> {
             this.pos,
             this.gameId,
             this.active,
-            this.player);
+            this.player,
+            this.firstMove);
     }
 
     public map<B>(f: (t: A) => B): Board<B> {
@@ -162,7 +172,8 @@ export class Board<A> implements HasMap<A> {
             this.pos,
             this.gameId,
             this.active,
-            this.player);
+            this.player,
+            this.firstMove);
     }
 
     // This is (and should be) equivalent to
@@ -178,7 +189,8 @@ export class Board<A> implements HasMap<A> {
                     new Pos(x, y),
                     this.gameId,
                     this.active,
-                    this.player);
+                    this.player,
+                    this.firstMove);
             }
         }
         return new Board(
@@ -186,7 +198,8 @@ export class Board<A> implements HasMap<A> {
             this.pos,
             this.gameId,
             this.active,
-            this.player);
+            this.player,
+            this.firstMove);
     }
 
     // Determines the next piece based on the color of the cell landed on
@@ -204,6 +217,8 @@ export class Board<A> implements HasMap<A> {
                 }
             }
         }
+
+        this.firstMove = false;
 
         return this;
     }
@@ -353,10 +368,13 @@ export function movePiece(board: BN, pos: Pos): boolean {
     let cell = board.setPos(pos).extract();
 
     if (board.active === null) {
-        board.active = new Pos(-1, -1);
+        board.active = pos.clone();
+        return true;
     }
 
-    // is this cell already active?
+    // if we clicked ourselves, swap over
+    // note: this is really only for cases where a piece is blocked
+    // I should ensure that the piece is, in fact, blocked
     if (board.active.equals(board.pos)) {
         // do nothing
         board.player = (board.player) ? 0 : 1;
@@ -365,11 +383,6 @@ export function movePiece(board: BN, pos: Pos): boolean {
     }
 
     else {
-        // not active and the cell contains a piece
-        // -> select this new piece
-        if (cell > 0) {
-            board.active.becomes(board.pos);
-        }
 
         // not active and cell does not contain a piece
         // -> move the currently active piece here
@@ -377,7 +390,8 @@ export function movePiece(board: BN, pos: Pos): boolean {
             if (!legalMove(board)) {
                 return false;
             }
-            // else ...
+
+            /*** LEAVE ALL THIS */
             board = board.gridSet(board.pos.x, board.pos.y, board.gridGet(
                 board.active.x, board.active.y));
             board = board.gridSet(board.active.x, board.active.y, 0);
@@ -391,6 +405,9 @@ export function movePiece(board: BN, pos: Pos): boolean {
             }
 
             board.player = (board.player) ? 0 : 1;
+            /*** END */
+        } else {
+            return false;
         }
     }
     board = board.selectNextPiece();
