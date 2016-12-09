@@ -27,6 +27,8 @@ function calculate_geometry(): Geom {
     if (boardSide < 480) {
         boardSide = window.innerWidth;
     }
+    const pixelRatio = window.devicePixelRatio || 1;
+    boardSide = boardSide / pixelRatio;
     const tileSide = (boardSide / 8);
     const radius = (tileSide * 0.9) / 2;
 
