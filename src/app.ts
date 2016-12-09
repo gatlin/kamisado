@@ -14,6 +14,8 @@ window.addEventListener('resize', (evt) => {
 runtime.ports.outbound.moves.recv(board => {
     const nextMove = ai.nextMove(board);
     if (nextMove) {
-        runtime.ports.inbound.moves.send(nextMove);
+        window.setTimeout(() => {
+            runtime.ports.inbound.moves.send(nextMove);
+        }, 2000);
     }
 });
