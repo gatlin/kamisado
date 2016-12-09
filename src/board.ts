@@ -257,6 +257,28 @@ export function drawCells(board: BN, context: Context, geom: Geom): BN {
     return board.convolve(drawCell(context, geom));
 }
 
+/*
+Draws circles with bezier curves.
+source:
+http://stackoverflow.com/questions/16313198/how-can-i-make-my-html5-canvas-arc-less-pixellated-or-more-anti-aliased
+*/
+function magic_circle(ctx, x, y, r) {
+    const m = 0.551784
+
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.scale(r, r)
+
+    ctx.beginPath()
+    ctx.moveTo(1, 0)
+    ctx.bezierCurveTo(1, -m, m, -1, 0, -1)
+    ctx.bezierCurveTo(-m, -1, -1, -m, -1, 0)
+    ctx.bezierCurveTo(-1, m, -m, 1, 0, 1)
+    ctx.bezierCurveTo(m, 1, 1, m, 1, 0)
+    ctx.closePath()
+    ctx.restore()
+}
+
 // Draws the cell on a `Board<number>` at its `#pos` property,
 // given a canvas drawing context and a geometry.
 function drawCell(context: Context, geom: Geom) {
@@ -268,8 +290,9 @@ function drawCell(context: Context, geom: Geom) {
         var cell = board.extract(); // `pos`
         var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
         context.fillStyle = cellColor;
-        context.fillRect(board.pos.x * tileSide, board.pos.y * tileSide,
-            tileSide, tileSide);
+        const rectStart = [(board.pos.x * tileSide) + 0.5,
+        (board.pos.y * tileSide) + 0.5];
+        context.fillRect(rectStart[0], rectStart[1], tileSide, tileSide);
 
         if (cell === 0) { return cell; }
 
@@ -277,28 +300,34 @@ function drawCell(context: Context, geom: Geom) {
         var x = board.pos.x + 1;
         var y = board.pos.y + 1;
         var center = {
-            x: ((x) * tileSide) - (tileSide / 2),
-            y: ((y) * tileSide) - (tileSide / 2)
+            x: ((x) * tileSide) - (tileSide / 2) + 0.5,
+            y: ((y) * tileSide) - (tileSide / 2) + 0.5
         };
 
         var bezel = (cell > 8) ? colors[9] : colors[8];
         var color = colors[(cell - 1) % 8];
 
         // bezel
+        /*
         context.beginPath();
         context.arc(center.x, center.y, radius, 0,
             Math.PI * 2, false);
         context.closePath();
+        */
+        magic_circle(context, center.x, center.y, radius);
         context.fillStyle = bezel;
         context.fill();
         context.strokeStyle = bezel;
         context.stroke();
 
         // piece color
+        /*
         context.beginPath();
         context.arc(center.x, center.y, radius * 0.75, 0,
             Math.PI * 2, false);
         context.closePath();
+        */
+        magic_circle(context, center.x, center.y, radius * 0.75);
         context.fillStyle = color;
         context.fill();
         context.strokeStyle = color;
@@ -307,9 +336,12 @@ function drawCell(context: Context, geom: Geom) {
         if (board.active !== null &&
             board.active.x === board.pos.x &&
             board.active.y === board.pos.y) {
+            /*
             context.beginPath();
             context.arc(center.x, center.y, radius * 0.5, 0,
                 Math.PI * 2, false);
+            */
+            magic_circle(context, center.x, center.y, radius * 0.5);
             context.fillStyle = bezel;
             context.fill();
             context.strokeStyle = bezel;

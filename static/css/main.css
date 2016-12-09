@@ -36,8 +36,6 @@ body {
     display: block;
     margin: 0 auto;
     padding: 0;
-    border: 2px solid black;
-    border-radius: 3px;
 }
 .footer {
     /* Set the fixed height of the footer here */
