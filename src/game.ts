@@ -161,6 +161,8 @@ function update(action, state) {
     if (action['type'] === Actions.CanvasUpdate && action.data !== null) {
         const canvasEl = action.data;
         state.context = canvasEl.getContext('2d');
+        const pixelRatio = window.devicePixelRatio || 1;
+        state.context.scale(pixelRatio, pixelRatio);
     }
 
     // the user clicked somewhere on the board
