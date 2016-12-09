@@ -27,8 +27,7 @@ function calculate_geometry(): Geom {
     if (boardSide < 480) {
         boardSide = window.innerWidth;
     }
-    const pixelRatio = window.devicePixelRatio || 1;
-    boardSide = boardSide / pixelRatio;
+
     const tileSide = (boardSide / 8);
     const radius = (tileSide * 0.9) / 2;
 
@@ -163,8 +162,6 @@ function update(action, state) {
     if (action['type'] === Actions.CanvasUpdate && action.data !== null) {
         const canvasEl = action.data;
         state.context = canvasEl.getContext('2d');
-        const pixelRatio = window.devicePixelRatio || 1;
-        state.context.scale(pixelRatio, pixelRatio);
     }
 
     // the user clicked somewhere on the board
