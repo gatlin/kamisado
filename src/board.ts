@@ -91,15 +91,12 @@ export class Board<A> implements HasMap<A> {
     // the player who has won, or null
     public won: number | null;
 
-    private firstMove: boolean = true;
-
     constructor(
         grid: Array<A>,
         pos: Pos,
         gameId: string,
         active: Pos = null,
-        player: number = 0,
-        firstMove: boolean = true
+        player: number = 0
     ) {
         this.grid = grid;
         this.pos = pos;
@@ -107,7 +104,6 @@ export class Board<A> implements HasMap<A> {
         this.player = player;
         this.won = null;
         this.active = active;
-        this.firstMove = true;
     }
 
     static fresh() {
@@ -132,10 +128,6 @@ export class Board<A> implements HasMap<A> {
         return this;
     }
 
-    public isFirstMove() {
-        return this.firstMove;
-    }
-
     // get the value of the grid at `this.pos`
     public extract(): A {
         return this.grid[this.pos.y * 8 + this.pos.x];
@@ -153,8 +145,7 @@ export class Board<A> implements HasMap<A> {
                     new Pos(x, y),
                     this.gameId,
                     this.active,
-                    this.player,
-                    this.firstMove);
+                    this.player);
             }
         }
         return new Board(
@@ -162,8 +153,7 @@ export class Board<A> implements HasMap<A> {
             this.pos,
             this.gameId,
             this.active,
-            this.player,
-            this.firstMove);
+            this.player);
     }
 
     public map<B>(f: (t: A) => B): Board<B> {
@@ -172,8 +162,7 @@ export class Board<A> implements HasMap<A> {
             this.pos,
             this.gameId,
             this.active,
-            this.player,
-            this.firstMove);
+            this.player);
     }
 
     // This is (and should be) equivalent to
@@ -189,8 +178,7 @@ export class Board<A> implements HasMap<A> {
                     new Pos(x, y),
                     this.gameId,
                     this.active,
-                    this.player,
-                    this.firstMove);
+                    this.player);
             }
         }
         return new Board(
@@ -198,8 +186,7 @@ export class Board<A> implements HasMap<A> {
             this.pos,
             this.gameId,
             this.active,
-            this.player,
-            this.firstMove);
+            this.player);
     }
 
     // Determines the next piece based on the color of the cell landed on
@@ -217,8 +204,6 @@ export class Board<A> implements HasMap<A> {
                 }
             }
         }
-
-        this.firstMove = false;
 
         return this;
     }
@@ -366,6 +351,11 @@ function drawCell(context: Context, geom: Geom) {
 export function movePiece(board: BN, pos: Pos): boolean {
 
     let cell = board.setPos(pos).extract();
+
+    if ((board.player && cell < 8 && cell > 0) ||
+        (!board.player && cell > 8)) {
+        return false;
+    }
 
     if (board.active === null) {
         board.active = pos.clone();
