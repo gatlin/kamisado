@@ -288,8 +288,9 @@ function drawCell(context: Context, geom: Geom) {
         let radius = geom.radius / geom.pixelRatio;
 
         // draw the background color
-        var cell = board.extract(); // `pos`
-        var cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
+        const cell = board.extract(); // `pos`
+        console.log('cell =', cell);
+        const cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
         context.fillStyle = cellColor;
         const rectStart = [(board.pos.x * tileSide),
         (board.pos.y * tileSide)];
@@ -298,15 +299,15 @@ function drawCell(context: Context, geom: Geom) {
         if (!(cell > 0)) { return cell; }
 
         // if there is a piece on this cell, draw it as well
-        var x = board.pos.x + 1;
-        var y = board.pos.y + 1;
-        var center = {
+        const x = board.pos.x + 1;
+        const y = board.pos.y + 1;
+        const center = {
             x: ((x) * tileSide) - (tileSide / 2),
             y: ((y) * tileSide) - (tileSide / 2)
         };
 
-        var bezel = (cell > 8) ? colors[9] : colors[8];
-        var color = colors[(cell - 1) % 8];
+        const bezel = (cell > 8) ? colors[9] : colors[8];
+        const color = colors[(cell - 1) % 8];
 
         // bezel
         context.beginPath();
