@@ -289,7 +289,6 @@ function drawCell(context: Context, geom: Geom) {
 
         // draw the background color
         const cell = board.extract(); // `pos`
-        console.log('cell =', cell);
         const cellColor = colors[tileColorPattern[board.pos.y][board.pos.x]];
         context.fillStyle = cellColor;
         const rectStart = [(board.pos.x * tileSide),
