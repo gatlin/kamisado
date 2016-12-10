@@ -295,7 +295,7 @@ function drawCell(context: Context, geom: Geom) {
         (board.pos.y * tileSide)];
         context.fillRect(rectStart[0], rectStart[1], tileSide, tileSide);
 
-        if (cell === 0) { return cell; }
+        if (!(cell > 0)) { return cell; }
 
         // if there is a piece on this cell, draw it as well
         var x = board.pos.x + 1;

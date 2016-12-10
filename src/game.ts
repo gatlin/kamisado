@@ -61,7 +61,7 @@ type GameState = {
     i_am: number; // 0 or 1, AI player number
 };
 
-// n > 0 => a game piece
+// n = 0 => a game piece
 // n > 0 && < 9 => player 0
 // else => player 1
 function new_game(): Board<number> {
